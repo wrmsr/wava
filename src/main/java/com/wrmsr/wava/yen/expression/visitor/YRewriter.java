@@ -151,7 +151,7 @@ public final class YRewriter<C>
         return new YLoad(
                 expression.getType(),
                 expression.getBytes(),
-                expression.isSsigned(),
+                expression.isSigned(),
                 expression.getOffset(),
                 expression.getAlign(),
                 expression.getPtr().accept(this, context)

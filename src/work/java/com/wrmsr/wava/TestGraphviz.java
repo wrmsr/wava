@@ -23,7 +23,7 @@ import com.wrmsr.wava.core.node.visitor.Visitors;
 import com.wrmsr.wava.core.type.Name;
 import com.wrmsr.wava.core.unit.Function;
 import com.wrmsr.wava.util.Json;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

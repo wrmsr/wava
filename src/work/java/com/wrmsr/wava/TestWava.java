@@ -15,7 +15,7 @@ package com.wrmsr.wava;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.squareup.javapoet.CodeBlock;
+import com.wrmsr.wava.java.poet.CodeBlock;
 import com.wrmsr.wava.java.lang.JName;
 import com.wrmsr.wava.java.lang.JQualifiedName;
 import com.wrmsr.wava.java.lang.JRenderer;
@@ -23,12 +23,14 @@ import com.wrmsr.wava.java.lang.compilationUnit.JCompilationUnit;
 import com.wrmsr.wava.java.lang.compilationUnit.JImportSpec;
 import com.wrmsr.wava.java.lang.compilationUnit.JPackageSpec;
 import com.wrmsr.wava.java.lang.tree.declaration.JType;
-import org.testng.annotations.Test;
+import org.junit.Test;
+
+import java.util.Optional;
 
 public class TestWava
 {
     public static final JCompilationUnit FILE = new JCompilationUnit(
-            new JPackageSpec(JQualifiedName.parse("com.wrmsr.foo")),
+            Optional.of(new JPackageSpec(JQualifiedName.parse("com.wrmsr.foo"))),
             ImmutableSet.of(
                     new JImportSpec(false, JQualifiedName.parse("javax.util.Thing"), false),
                     new JImportSpec(false, JQualifiedName.parse("java.util.Thing"), false),

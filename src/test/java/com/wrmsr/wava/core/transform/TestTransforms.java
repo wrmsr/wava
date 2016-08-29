@@ -14,16 +14,15 @@
 package com.wrmsr.wava.core.transform;
 
 import com.google.common.collect.ImmutableList;
+import com.wrmsr.wava.core.literal.Literal;
 import com.wrmsr.wava.core.node.Block;
 import com.wrmsr.wava.core.node.Const;
 import com.wrmsr.wava.core.node.Node;
 import com.wrmsr.wava.core.node.Nop;
-import com.wrmsr.wava.core.literal.Literal;
 import com.wrmsr.wava.transform.Transforms;
-import com.wrmsr.wava.util.Json;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class TestTransforms
 {

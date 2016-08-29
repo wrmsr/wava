@@ -42,7 +42,7 @@ public final class Load
 {
     private final Type type;
     private final int bytes;
-    private final boolean isSigned;
+    private final boolean signed;
     private final int offset;
     private final int align;
     private final Node ptr;
@@ -51,14 +51,14 @@ public final class Load
     public Load(
             @JsonProperty("type") Type type,
             @JsonProperty("bytes") int bytes,
-            @JsonProperty("signed") boolean isSigned,
+            @JsonProperty("signed") boolean signed,
             @JsonProperty("offset") int offset,
             @JsonProperty("align") int align,
             @JsonProperty("ptr") Node ptr)
     {
         this.type = type;
         this.bytes = bytes;
-        this.isSigned = isSigned;
+        this.signed = signed;
         this.offset = offset;
         this.align = align;
         this.ptr = requireNonNull(ptr);
@@ -76,7 +76,7 @@ public final class Load
         }
         Load load = (Load) o;
         return bytes == load.bytes &&
-                isSigned == load.isSigned &&
+                signed == load.signed &&
                 offset == load.offset &&
                 align == load.align &&
                 type == load.type &&
@@ -86,7 +86,7 @@ public final class Load
     @Override
     public int hashCode()
     {
-        return Objects.hash(type, bytes, isSigned, offset, align, ptr);
+        return Objects.hash(type, bytes, signed, offset, align, ptr);
     }
 
     @JsonProperty("type")
@@ -104,7 +104,7 @@ public final class Load
     @JsonProperty("signed")
     public boolean isSigned()
     {
-        return isSigned;
+        return signed;
     }
 
     @JsonProperty("offset")

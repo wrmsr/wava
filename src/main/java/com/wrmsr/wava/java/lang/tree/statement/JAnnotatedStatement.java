@@ -13,11 +13,14 @@
  */
 package com.wrmsr.wava.java.lang.tree.statement;
 
-import com.wrmsr.wava.java.lang.tree.expression.JMethodInvocation;
+import com.wrmsr.wava.java.lang.JQualifiedName;
+import com.wrmsr.wava.java.lang.tree.expression.JExpression;
 
 import javax.annotation.concurrent.Immutable;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -25,12 +28,14 @@ import static java.util.Objects.requireNonNull;
 public final class JAnnotatedStatement
         extends JStatement
 {
-    private final JMethodInvocation annotation;
+    private final JQualifiedName annotation;
+    private final Optional<List<JExpression>> operands;
     private final JStatement statement;
 
-    public JAnnotatedStatement(JMethodInvocation annotation, JStatement statement)
+    public JAnnotatedStatement(JQualifiedName annotation, Optional<List<JExpression>> operands, JStatement statement)
     {
         this.annotation = requireNonNull(annotation);
+        this.operands = requireNonNull(operands);
         this.statement = requireNonNull(statement);
     }
 
@@ -45,18 +50,24 @@ public final class JAnnotatedStatement
         }
         JAnnotatedStatement that = (JAnnotatedStatement) o;
         return Objects.equals(annotation, that.annotation) &&
+                Objects.equals(operands, that.operands) &&
                 Objects.equals(statement, that.statement);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(annotation, statement);
+        return Objects.hash(annotation, operands, statement);
     }
 
-    public JMethodInvocation getAnnotation()
+    public JQualifiedName getAnnotation()
     {
         return annotation;
+    }
+
+    public Optional<List<JExpression>> getOperands()
+    {
+        return operands;
     }
 
     public JStatement getStatement()

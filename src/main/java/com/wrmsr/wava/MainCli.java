@@ -28,7 +28,6 @@ public final class MainCli
     public static void main(String[] args)
             throws Throwable
     {
-
         @SuppressWarnings({"unchecked"})
         Cli.CliBuilder<Runnable> builder = Cli.<Runnable>builder("wava")
                 .withDescription("WebAssembly for Java")

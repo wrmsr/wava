@@ -15,7 +15,9 @@ package com.wrmsr.wava.transform;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import com.wrmsr.wava.analyze.ControlTransferAnalysis;
+import com.wrmsr.wava.analyze.LocalAnalysis;
 import com.wrmsr.wava.core.node.Block;
 import com.wrmsr.wava.core.node.Break;
 import com.wrmsr.wava.core.node.BreakTable;
@@ -25,12 +27,19 @@ import com.wrmsr.wava.core.node.Label;
 import com.wrmsr.wava.core.node.Loop;
 import com.wrmsr.wava.core.node.Node;
 import com.wrmsr.wava.core.node.Nop;
+import com.wrmsr.wava.core.node.Return;
 import com.wrmsr.wava.core.node.SetLocal;
+import com.wrmsr.wava.core.node.Unreachable;
 import com.wrmsr.wava.core.node.visitor.Visitor;
 import com.wrmsr.wava.core.type.Index;
 import com.wrmsr.wava.core.type.Name;
+import com.wrmsr.wava.core.type.Type;
+import com.wrmsr.wava.core.unit.Locals;
 import com.wrmsr.wava.util.Cell;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -46,8 +55,10 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.wrmsr.wava.core.node.Nodes.nodify;
 import static com.wrmsr.wava.core.node.Nodes.reconstructNode;
 import static com.wrmsr.wava.core.node.Nodes.rewriteNode;
-import static com.wrmsr.wava.util.function.Functions.negate;
+import static com.wrmsr.wava.util.Itertools.enumerate;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
+import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
+import static com.wrmsr.wava.util.function.Functions.negate;
 import static java.util.Objects.requireNonNull;
 
 public final class Transforms
@@ -56,7 +67,7 @@ public final class Transforms
     {
     }
 
-    public static Node eliminateUnreachable(Node root, ControlTransferAnalysis controlFlowAnalyses)
+    public static Node eliminateUnreachable(Node root, ControlTransferAnalysis controlFlowAnalyses, boolean leaveExplicitUnreachableNodes)
     {
         return root.accept(new Visitor<Void, Node>()
         {
@@ -71,18 +82,31 @@ public final class Transforms
             {
                 ImmutableList.Builder<Node> builder = ImmutableList.builder();
                 Iterator<Node> iterator = node.getChildren().iterator();
+                boolean isUnreachable = false;
+                Node child = null;
                 while (iterator.hasNext()) {
-                    Node child = iterator.next();
+                    child = iterator.next();
                     ControlTransferAnalysis.Entry cfa = requireNonNull(controlFlowAnalyses.get(child));
                     if (cfa.getExecution() == ControlTransferAnalysis.Execution.UNREACHABLE) {
+                        isUnreachable = true;
                         break;
                     }
                     builder.add(visitNode(child, context));
                 }
-                while (iterator.hasNext()) {
-                    Node child = iterator.next();
-                    ControlTransferAnalysis.Entry cfa = requireNonNull(controlFlowAnalyses.get(child));
-                    checkState(cfa.getExecution() == ControlTransferAnalysis.Execution.UNREACHABLE);
+                boolean addedExplicitUnreachable = false;
+                if (isUnreachable) {
+                    while (true) {
+                        ControlTransferAnalysis.Entry cfa = requireNonNull(controlFlowAnalyses.get(child));
+                        checkState(cfa.getExecution() == ControlTransferAnalysis.Execution.UNREACHABLE);
+                        if (leaveExplicitUnreachableNodes && child instanceof Unreachable && !addedExplicitUnreachable) {
+                            builder.add(child);
+                            addedExplicitUnreachable = true;
+                        }
+                        if (!iterator.hasNext()) {
+                            break;
+                        }
+                        child = iterator.next();
+                    }
                 }
                 return new Block(
                         builder.build());
@@ -337,5 +361,87 @@ public final class Transforms
             throw new IllegalStateException();
         }
         return ret;
+    }
+
+    public static com.wrmsr.wava.core.unit.Function eliminateUnreferencedLocals(com.wrmsr.wava.core.unit.Function function)
+    {
+        LocalAnalysis.Entry la = LocalAnalysis.analyze(function.getBody()).get(function.getBody());
+        List<Index> indices = new ArrayList<>(Sets.union(la.getLocalGets(), la.getLocalPuts()));
+        Collections.sort(indices);
+        Locals locals = Locals.of(function.getLocals().getList().stream()
+                .filter(l -> indices.contains(l.getIndex()))
+                .map(l -> ImmutablePair.of(l.getName(), l.getType()))
+                .collect(toImmutableList()));
+        Map<Index, Index> indexMap = enumerate(indices.stream()).collect(toImmutableMap(i -> i.getItem(), i -> Index.of(i.getIndex())));
+        return new com.wrmsr.wava.core.unit.Function(
+                function.getName(),
+                function.getResult(),
+                function.getArgCount(),
+                locals,
+                remapLocals(function.getBody(), indexMap));
+    }
+
+    // TODO: jls8 14.21 :/
+    public static Node ensureTerminal(Node body, Type result)
+    {
+        ControlTransferAnalysis.Entry cfa = ControlTransferAnalysis.analyze(body).get(body);
+        if (cfa.getExecution() == ControlTransferAnalysis.Execution.FALLTHROUGH) {
+            if (result.isConcrete()) {
+                return new Return(
+                        body);
+            }
+            else {
+                return new Block(
+                        ImmutableList.of(
+                                body,
+                                new Return(
+                                        new Nop())));
+            }
+        }
+        // FIXME make up your mind
+//        else if (cfa.isLoop()) {
+//            return new Block(
+//                    ImmutableList.of(
+//                            body,
+//                            new Unreachable()));
+//        }
+        else {
+            return body;
+        }
+    }
+
+    public static Node insertExplicitLoopBreaks(Node root, ControlTransferAnalysis cta)
+    {
+        return root.accept(new Visitor<Void, Node>()
+        {
+            @Override
+            protected Node visitNode(Node node, Void context)
+            {
+                return reconstructNode(node, node.getChildren().stream().map(c -> c.accept(this, context)).iterator());
+            }
+
+            @Override
+            public Node visitLoop(Loop node, Void context)
+            {
+                if (cta.get(node).getExecution() == ControlTransferAnalysis.Execution.FALLTHROUGH) {
+                    Name endName = Name.of(node.getName().get() + "$end");
+                    return new Label(
+                            endName,
+                            new Loop(
+                                    node.getName(),
+                                    new Block(
+                                            ImmutableList.of(
+                                                    node.getBody().accept(this, context),
+                                                    new Break(
+                                                            endName,
+                                                            new Nop())))));
+                }
+                else {
+                    return new Loop(
+                            node.getName(),
+                            node.getBody().accept(this, context));
+                }
+            }
+        }, null);
     }
 }

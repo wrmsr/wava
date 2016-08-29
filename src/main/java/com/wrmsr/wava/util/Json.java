@@ -29,7 +29,7 @@ import com.google.common.base.Throwables;
 
 import java.io.IOException;
 
-public class Json
+public final class Json
 {
     private Json()
     {

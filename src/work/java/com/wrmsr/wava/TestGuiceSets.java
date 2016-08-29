@@ -20,7 +20,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.wrmsr.wava.util.Cell;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.Set;
 

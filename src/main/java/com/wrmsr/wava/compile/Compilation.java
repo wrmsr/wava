@@ -15,21 +15,31 @@ package com.wrmsr.wava.compile;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.wrmsr.wava.core.type.Index;
+import com.wrmsr.wava.core.type.Name;
+import com.wrmsr.wava.core.type.Type;
+import com.wrmsr.wava.core.unit.Function;
+import com.wrmsr.wava.java.lang.JArg;
+import com.wrmsr.wava.java.lang.JName;
 import com.wrmsr.wava.java.lang.JQualifiedName;
 import com.wrmsr.wava.java.lang.JTypeSpecifier;
 import com.wrmsr.wava.java.lang.op.JBinaryOp;
 import com.wrmsr.wava.java.lang.tree.expression.JBinary;
-import com.wrmsr.wava.java.lang.tree.expression.JCast;
 import com.wrmsr.wava.java.lang.tree.expression.JConditional;
 import com.wrmsr.wava.java.lang.tree.expression.JExpression;
 import com.wrmsr.wava.java.lang.tree.expression.JLiteral;
 import com.wrmsr.wava.java.lang.tree.expression.JMethodInvocation;
-import com.wrmsr.wava.core.type.Type;
+import com.wrmsr.wava.java.lang.tree.statement.JBlock;
+import com.wrmsr.wava.java.lang.tree.statement.JStatement;
+import com.wrmsr.wava.java.lang.tree.statement.JVariable;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.wrmsr.wava.java.lang.tree.JTrees.JONE;
 import static com.wrmsr.wava.java.lang.tree.JTrees.JZERO;
+import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
 
 public final class Compilation
 {
@@ -90,11 +100,12 @@ public final class Compilation
                         Long.MIN_VALUE));
     }
 
-    public static JExpression newCastLong(JExpression value)
+    public static JExpression newCastUnsignedIntToLong(JExpression value)
     {
-        return new JCast(
-                JTypeSpecifier.of("long"),
-                value);
+        return new JBinary(
+                JBinaryOp.BitwiseAnd,
+                value,
+                new JLiteral(0xFFFFFFFFL));
     }
 
     public static JExpression newBooleanToInt(JExpression value)
@@ -117,5 +128,46 @@ public final class Compilation
                 JBinaryOp.NotEquals,
                 jcondition,
                 JZERO);
+    }
+
+    public static JExpression translateAnticondition(JExpression jcondition)
+    {
+        if (jcondition instanceof JConditional) {
+            JConditional jconditional = (JConditional) jcondition;
+            if (jconditional.getIfTrue().equals(JZERO) && jconditional.getIfFalse().equals(JONE)) {
+                return jconditional.getCondition();
+            }
+        }
+        return new JBinary(
+                JBinaryOp.Equals,
+                jcondition,
+                JZERO);
+    }
+
+    public static List<JArg> compileArgs(Function function)
+    {
+        return function.getArgLocals().stream()
+                .map(l -> new JArg(
+                        PRIMITIVE_TYPE_MAP.get(l.getType()),
+                        JName.of(l.getName().get())))
+                .collect(toImmutableList());
+    }
+
+    public static JStatement compileLocalDecls(Function function)
+    {
+        return new JBlock(
+                function.getNonArgLocals().stream()
+                        .map(l -> new JVariable(
+                                PRIMITIVE_TYPE_MAP.get(l.getType()),
+                                getLocalName(function, l.getIndex()),
+                                Optional.of(new JLiteral(
+                                        l.getType().zero()))))
+                        .collect(toImmutableList()));
+    }
+
+    public static JName getLocalName(Function function, Index index)
+    {
+        Name name = function.getLocals().getLocal(index).getName();
+        return JName.of(name.get());
     }
 }

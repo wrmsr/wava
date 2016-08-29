@@ -13,10 +13,11 @@
  */
 package com.wrmsr.wava.java.lang;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.squareup.javapoet.CodeBlock;
 import com.wrmsr.wava.java.lang.compilationUnit.JCompilationUnit;
 import com.wrmsr.wava.java.lang.compilationUnit.JImportSpec;
 import com.wrmsr.wava.java.lang.compilationUnit.JPackageSpec;
@@ -30,6 +31,7 @@ import com.wrmsr.wava.java.lang.tree.declaration.JField;
 import com.wrmsr.wava.java.lang.tree.declaration.JInitializationBlock;
 import com.wrmsr.wava.java.lang.tree.declaration.JMethod;
 import com.wrmsr.wava.java.lang.tree.declaration.JType;
+import com.wrmsr.wava.java.lang.tree.declaration.JVerbatimDeclaration;
 import com.wrmsr.wava.java.lang.tree.expression.JArrayAccess;
 import com.wrmsr.wava.java.lang.tree.expression.JAssignment;
 import com.wrmsr.wava.java.lang.tree.expression.JBinary;
@@ -66,21 +68,21 @@ import com.wrmsr.wava.java.lang.tree.statement.JSwitch;
 import com.wrmsr.wava.java.lang.tree.statement.JThrow;
 import com.wrmsr.wava.java.lang.tree.statement.JVariable;
 import com.wrmsr.wava.java.lang.tree.statement.JWhileLoop;
+import com.wrmsr.wava.java.poet.CodeBlock;
+import com.wrmsr.wava.java.poet.CodeWriter;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
-import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 
 public final class JRenderer
@@ -120,7 +122,7 @@ public final class JRenderer
 
     public void renderCompilationUnit(JCompilationUnit compilationUnit)
     {
-        renderPackageSpec(compilationUnit.getPackageSpec());
+        compilationUnit.getPackageSpec().ifPresent(this::renderPackageSpec);
         code.add("\n");
         renderImportSpecs(compilationUnit.getImportSpecs().iterator());
         renderDeclaration(compilationUnit.getBody());
@@ -234,7 +236,12 @@ public final class JRenderer
             public Void visitJAnnotatedDeclaration(JAnnotatedDeclaration jdeclaration, Void context)
             {
                 code.add("@");
-                renderExpression(jdeclaration.getAnnotation());
+                renderQualifiedName(jdeclaration.getAnnotation());
+                jdeclaration.getOperands().ifPresent(operands -> {
+                    code.add("(");
+                    renderOperands(operands);
+                    code.add(")");
+                });
                 code.add("\n");
                 renderDeclaration(jdeclaration.getDeclaration());
                 return null;
@@ -333,6 +340,13 @@ public final class JRenderer
                 code.add("}\n");
                 return null;
             }
+
+            @Override
+            public Void visitJVerbatimDeclaration(JVerbatimDeclaration jdeclaration, Void context)
+            {
+                code.add("$L", jdeclaration.getText());
+                return null;
+            }
         }, null);
     }
 
@@ -350,7 +364,12 @@ public final class JRenderer
             public Void visitJAnnotatedStatement(JAnnotatedStatement jstatement, Void context)
             {
                 code.add("@");
-                renderExpression(jstatement.getAnnotation());
+                renderQualifiedName(jstatement.getAnnotation());
+                jstatement.getOperands().ifPresent(operands -> {
+                    code.add("(");
+                    renderOperands(operands);
+                    code.add(")");
+                });
                 code.add("\n");
                 renderStatement(jstatement.getStatement());
                 return null;
@@ -669,20 +688,6 @@ public final class JRenderer
                 return null;
             }
 
-            private void renderOperands(List<JExpression> operands)
-            {
-                boolean comma = false;
-                for (JExpression operand : operands) {
-                    if (comma) {
-                        code.add(", ");
-                    }
-                    else {
-                        comma = true;
-                    }
-                    renderParamExpression(operand);
-                }
-            }
-
             @Override
             public Void visitJMethodInvocation(JMethodInvocation jexpression, Void context)
             {
@@ -796,18 +801,59 @@ public final class JRenderer
         }
     }
 
-    @SuppressWarnings({"unchecked", "broughtShameToFamily"})
-    public static String renderWithIndent(CodeBlock block, String indent)
-            throws IOException, ReflectiveOperationException
+    public void renderOperands(List<JExpression> operands)
     {
-        Class cls = Class.forName("com.squareup.javapoet.CodeWriter");
-        Constructor ctor = cls.getDeclaredConstructor(Appendable.class, String.class, Set.class);
-        ctor.setAccessible(true);
-        Method method = cls.getDeclaredMethod("emit", CodeBlock.class);
-        method.setAccessible(true);
+        boolean comma = false;
+        for (JExpression operand : operands) {
+            if (comma) {
+                code.add(", ");
+            }
+            else {
+                comma = true;
+            }
+            renderParamExpression(operand);
+        }
+    }
+
+    public static void renderWithIndent(CodeBlock block, String indent, Appendable appendable)
+    {
+        try {
+            CodeWriter.builder(appendable).indent(indent).build().emit(block);
+        }
+        catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    public static String renderWithIndent(CodeBlock block, String indent)
+    {
         StringWriter out = new StringWriter();
-        Object instance = ctor.newInstance(out, indent, emptySet());
-        method.invoke(instance, block);
+        renderWithIndent(block, indent, out);
+        return out.toString();
+    }
+
+    public static void renderWithIndent(Consumer<JRenderer> renderer, String indent, Appendable appendable)
+    {
+        CodeBlock.Builder code = CodeBlock.builder();
+        renderer.accept(new JRenderer(code));
+        CodeBlock block = code.build();
+
+        renderWithIndent(block, indent, appendable);
+    }
+
+    @VisibleForTesting
+    public static String renderWithIndent(JCompilationUnit jcompilationUnit, String indent)
+    {
+        StringWriter out = new StringWriter();
+        renderWithIndent(r -> r.renderCompilationUnit(jcompilationUnit), indent, out);
+        return out.toString();
+    }
+
+    @VisibleForTesting
+    public static String renderWithIndent(JDeclaration jdeclaration, String indent)
+    {
+        StringWriter out = new StringWriter();
+        renderWithIndent(r -> r.renderDeclaration(jdeclaration), indent, out);
         return out.toString();
     }
 }

@@ -13,15 +13,20 @@
  */
 package com.wrmsr.wava.compile.binary;
 
-import com.google.inject.PrivateModule;
+import com.google.inject.AbstractModule;
+import com.wrmsr.wava.compile.module.ModuleCompilationParticipant;
+import com.wrmsr.wava.driver.ModuleScoped;
 
-public class BinaryModule
-        extends PrivateModule
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
+
+public final class BinaryModule
+        extends AbstractModule
 {
     @Override
     protected void configure()
     {
-        bind(BinaryCompiler.class).toInstance(BinaryCompilation::compileBinary);
-        expose(BinaryCompiler.class);
+        bind(BinaryCompilerImpl.class).in(ModuleScoped.class);
+        newSetBinder(binder(), ModuleCompilationParticipant.class).addBinding().to(BinaryCompilerImpl.class).in(ModuleScoped.class);
+        bind(BinaryCompiler.class).to(BinaryCompilerImpl.class);
     }
 }

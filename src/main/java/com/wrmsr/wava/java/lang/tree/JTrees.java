@@ -63,4 +63,9 @@ public final class JTrees
             return new JBlock(statements.stream().map(JTrees::jflatten).flatMap(List::stream).collect(toImmutableList()));
         }
     }
+
+    public static JBlock jblockify(JStatement... statements)
+    {
+        return jblockify(ImmutableList.copyOf(statements));
+    }
 }

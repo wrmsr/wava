@@ -54,4 +54,9 @@ public class JDeclarationVisitor<C, R>
     {
         return visitJDeclaration(jdeclaration, context);
     }
+
+    public R visitJVerbatimDeclaration(JVerbatimDeclaration jdeclaration, C context)
+    {
+        return visitJDeclaration(jdeclaration, context);
+    }
 }

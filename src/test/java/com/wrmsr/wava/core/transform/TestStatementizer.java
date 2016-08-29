@@ -37,7 +37,7 @@ import com.wrmsr.wava.core.type.Type;
 import com.wrmsr.wava.util.Json;
 import com.wrmsr.wava.util.NameGenerator;
 import com.wrmsr.wava.util.temps.TempManager;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;

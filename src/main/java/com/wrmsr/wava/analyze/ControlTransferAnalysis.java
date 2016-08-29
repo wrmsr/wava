@@ -51,8 +51,8 @@ public final class ControlTransferAnalysis
 {
     private static final ImSet<Target> EMPTY_TARGETS = PersistentHashSet.empty();
 
-    private static final Entry INFINITE = new Entry(Execution.INFINITE, EMPTY_TARGETS);
-    private static final Entry UNREACHABLE = new Entry(Execution.UNREACHABLE, EMPTY_TARGETS);
+    private static final Entry INFINITE = new Entry(Execution.INFINITE, EMPTY_TARGETS, true);
+    private static final Entry UNREACHABLE = new Entry(Execution.UNREACHABLE, EMPTY_TARGETS, false);
 
     public enum Execution
     {
@@ -155,11 +155,13 @@ public final class ControlTransferAnalysis
     {
         private final Execution execution;
         private final ImSet<Target> targets;
+        private final boolean isLoop;
 
-        private Entry(Execution execution, ImSet<Target> targets)
+        private Entry(Execution execution, ImSet<Target> targets, boolean isLoop)
         {
             this.execution = requireNonNull(execution);
             this.targets = requireNonNull(targets);
+            this.isLoop = isLoop;
             if (execution == Execution.INFINITE || execution == Execution.UNREACHABLE) {
                 checkArgument(targets.isEmpty());
             }
@@ -174,15 +176,16 @@ public final class ControlTransferAnalysis
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            Entry that = (Entry) o;
-            return execution == that.execution &&
-                    Objects.equals(targets, that.targets);
+            Entry entry = (Entry) o;
+            return isLoop == entry.isLoop &&
+                    execution == entry.execution &&
+                    Objects.equals(targets, entry.targets);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(execution, targets);
+            return Objects.hash(execution, targets, isLoop);
         }
 
         @Override
@@ -191,6 +194,7 @@ public final class ControlTransferAnalysis
             return MoreObjects.toStringHelper(this)
                     .add("execution", execution)
                     .add("targets", targets)
+                    .add("isLoop", isLoop)
                     .toString();
         }
 
@@ -202,6 +206,11 @@ public final class ControlTransferAnalysis
         public ImSet<Target> getTargets()
         {
             return targets;
+        }
+
+        public boolean isLoop()
+        {
+            return isLoop;
         }
 
         public Set<Name> getTargetNames()
@@ -284,19 +293,21 @@ public final class ControlTransferAnalysis
                 Execution execution = Execution.FALLTHROUGH;
                 ImSet<Target> targets = EMPTY_TARGETS;
                 List<Node> children = node.getChildren();
+                boolean isLoop = false;
                 int i = 0;
                 while (i < children.size()) {
                     Entry analysis = analyzeChild(children.get(i++), context);
                     targets = targets.union(analysis.getTargets());
                     if (analysis.getExecution() != Execution.FALLTHROUGH) {
                         execution = analysis.getExecution();
+                        isLoop = analysis.isLoop();
                         break;
                     }
                 }
                 while (i < children.size()) {
                     putUnreachable(children.get(i++));
                 }
-                return new Entry(execution, targets);
+                return new Entry(execution, targets, isLoop);
             }
 
             @Override
@@ -304,7 +315,7 @@ public final class ControlTransferAnalysis
             {
                 Entry value = analyzeChild(node.getValue(), context);
                 if (value.getExecution() == Execution.FALLTHROUGH) {
-                    return new Entry(Execution.TERMINAL, value.getTargets().union(ImmutableList.of(Target.of(node.getTarget()))));
+                    return new Entry(Execution.TERMINAL, value.getTargets().union(ImmutableList.of(Target.of(node.getTarget()))), false);
                 }
                 else {
                     return value;
@@ -317,7 +328,7 @@ public final class ControlTransferAnalysis
                 Entry condition = analyzeChild(node.getCondition(), context);
                 if (condition.getExecution() == Execution.FALLTHROUGH) {
                     Set<Target> targets = Stream.concat(node.getTargets().stream(), Stream.of(node.getDefaultTarget())).map(Target::of).collect(Collectors.toSet());
-                    return new Entry(Execution.TERMINAL, condition.getTargets().union(targets));
+                    return new Entry(Execution.TERMINAL, condition.getTargets().union(targets), false);
                 }
                 else {
                     return condition;
@@ -333,7 +344,7 @@ public final class ControlTransferAnalysis
                     Entry ifFalse = analyzeChild(node.getIfFalse(), context);
                     Execution execution = mergeExecutions(ifTrue.getExecution(), ifFalse.getExecution());
                     checkState(execution != Execution.UNREACHABLE);
-                    return new Entry(execution, ifTrue.getTargets().union(ifFalse.getTargets()));
+                    return new Entry(execution, ifTrue.getTargets().union(ifFalse.getTargets()), false);
                 }
                 else {
                     putUnreachable(node.getIfTrue());
@@ -348,7 +359,7 @@ public final class ControlTransferAnalysis
                 Entry body = analyzeChild(node.getBody(), context);
                 Target target = Target.of(node.getName());
                 if (body.getTargets().contains(target)) {
-                    return new Entry(Execution.FALLTHROUGH, body.getTargets().without(target));
+                    return new Entry(Execution.FALLTHROUGH, body.getTargets().without(target), false);
                 }
                 else {
                     return body;
@@ -364,7 +375,7 @@ public final class ControlTransferAnalysis
                     return INFINITE;
                 }
                 else {
-                    return new Entry(body.getExecution(), targets);
+                    return new Entry(body.getExecution(), targets, true);
                 }
             }
 
@@ -373,7 +384,7 @@ public final class ControlTransferAnalysis
             {
                 Entry value = analyzeChild(node.getValue(), context);
                 if (value.getExecution() == Execution.FALLTHROUGH) {
-                    return new Entry(Execution.TERMINAL, EMPTY_TARGETS.put(Target.RETURN));
+                    return new Entry(Execution.TERMINAL, EMPTY_TARGETS.put(Target.RETURN), false);
                 }
                 else {
                     return value;
@@ -393,7 +404,7 @@ public final class ControlTransferAnalysis
                         targets = targets.union(caseEntry.getTargets());
                     }
                     checkState(execution != Execution.UNREACHABLE);
-                    return new Entry(execution, targets);
+                    return new Entry(execution, targets, false);
                 }
                 else {
                     node.getEntries().stream().map(Switch.Entry::getBody).forEach(this::putUnreachable);
@@ -404,7 +415,7 @@ public final class ControlTransferAnalysis
             @Override
             public Entry visitUnreachable(Unreachable node, Void context)
             {
-                return new Entry(Execution.TERMINAL, EMPTY_TARGETS.put(Target.RETURN));
+                return new Entry(Execution.TERMINAL, EMPTY_TARGETS.put(Target.RETURN), false);
             }
         }, null);
         analyses.put(root, rootAnalysis);

@@ -35,10 +35,10 @@ import com.wrmsr.wava.transform.statementizer.StatementizerTransform;
 import com.wrmsr.wava.util.NameGenerator;
 import com.wrmsr.wava.util.temps.TempManager;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class TestStatementizer
 {

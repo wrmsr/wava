@@ -32,7 +32,7 @@ import com.wrmsr.wava.yen.expression.YBlock;
 import com.wrmsr.wava.yen.expression.YBreak;
 import com.wrmsr.wava.yen.expression.YConst;
 import com.wrmsr.wava.yen.expression.YExpression;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.Optional;

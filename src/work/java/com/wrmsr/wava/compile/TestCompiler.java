@@ -14,7 +14,7 @@
 package com.wrmsr.wava.compile;
 
 import org.apache.maven.project.MavenProject;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;

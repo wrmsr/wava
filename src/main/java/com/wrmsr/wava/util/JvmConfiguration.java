@@ -122,7 +122,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class JvmConfiguration
+public final class JvmConfiguration
 {
     public enum Prefix
     {

@@ -13,6 +13,7 @@
  */
 package com.wrmsr.wava.java.lang;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.wrmsr.wava.util.Itertools.compareIterators;
@@ -42,19 +44,32 @@ public final class JQualifiedName
         this.parts = ImmutableList.copyOf(parts);
     }
 
-    public static JQualifiedName of(JName... parts)
+    public static JQualifiedName of(String name)
     {
-        return new JQualifiedName(Arrays.asList(parts));
+        return new JQualifiedName(ImmutableList.of(JName.of(name)));
     }
 
-    public static JQualifiedName of(String... parts)
+    public static JQualifiedName of(Object... parts)
     {
-        return new JQualifiedName(Arrays.stream(parts).map(JName::of).collect(toImmutableList()));
+        return new JQualifiedName(Arrays.stream(parts).flatMap(o -> {
+            if (o instanceof JQualifiedName) {
+                return ((JQualifiedName) o).getParts().stream();
+            }
+            else if (o instanceof JName) {
+                return Stream.of((JName) o);
+            }
+            else if (o instanceof String) {
+                return Stream.of(JName.of((String) o));
+            }
+            else {
+                throw new IllegalArgumentException();
+            }
+        }).collect(toImmutableList()));
     }
 
     public static JQualifiedName parse(String str)
     {
-        return of(Splitter.on('.').splitToList(str).toArray(new String[0]));
+        return new JQualifiedName(Splitter.on('.').splitToList(str).stream().map(JName::of).collect(toImmutableList()));
     }
 
     public List<JName> getParts()
@@ -109,6 +124,11 @@ public final class JQualifiedName
         return MoreObjects.toStringHelper(this)
                 .add("parts", parts)
                 .toString();
+    }
+
+    public String join()
+    {
+        return Joiner.on('.').join(parts);
     }
 
     public boolean startsWith(JQualifiedName prefix)
