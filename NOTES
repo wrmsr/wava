@@ -1,0 +1,1293 @@
+http://www.graphviz.org/Documentation/dotguide.pdf
+http://www.cc.gatech.edu/~harrold/6340/cs6340_fall2009/Readings/lengauer91jul.pdf
+https://www.cs.rice.edu/~keith/EMBED/dom.pdf
+https://github.com/skylot/jadx haaayyy~~~
+
+should prob just use javax.lang.model now
+https://blogs.oracle.com/darcy/entry/unsigned_api
+
+
+BLOCKERS:
+ - GOD DAMN TRUNCS
+ - <init> splitter (tables)
+ - Outliner
+  - Local analysis
+
+MEH:
+ - subswitch generator
+
+TODO:
+ - NodePath, just child index, ... NodePath.deduce / NodePath.find, "0,4,2,1,1" ...
+ - PrivateModules?
+ - fucking default i32 return 0? ugh
+ - fixup void returns (breaks too?)
+ - Mangle local names
+ - *** Boolean optimization. Get rid of these fucking (expr ? 0 : 1) != 0
+  - Boolean primitive type? yeah probably
+ - Cleanup / de-yen-ify ops
+ - Track down x = y = x shit
+  - Fucking stupid statementizer RESULT IS NOT ALWAYS TEMP
+ - only init locals if necessary
+
+
+DONESORTA:
+ - Yes, dedicated Switch Node, analysis + transform passes to identify, BreakTable still supported for sadistic frontends
+  - https://github.com/WebAssembly/binaryen/pull/617/files hi
+
+
+test/wasm-install/wasm-install/bin/clang -I wasm-install/wasm-install/sysroot/include -emit-llvm --target=wasm32 -Oz -c test/wasm-install/wasm-install/bin/emscripten/tests/sqlite/sqlite3.c -o test/wasm-install/wasm-install/bin/emscripten/tests/sqlite/sqlite3.bc -DSQLITE_DISABLE_LFS -DLONGDOUBLE_TYPE=double -DSQLITE_THREADSAFE=0
+test/wasm-install/wasm-install/bin/llc -asm-verbose=false test/wasm-install/wasm-install/bin/emscripten/tests/sqlite/sqlite3.bc -o test/wasm-install/wasm-install/bin/emscripten/tests/sqlite/sqlite3.s
+bin/s2wasm test/wasm-install/wasm-install/bin/emscripten/tests/sqlite/sqlite3.s > test/wasm-install/wasm-install/bin/emscripten/tests/sqlite/sqlite3.wast
+
+
+
+PassFactory ?
+Key.get(Pass.class, "PassName")
+context.seed(PassClass.class, FooPass.class)
+injector.getInstance(Pass.class) ?
+
+destruction / clobbering?
+ based on provision requirements?
+
+@FunctionalInterface
+public interface PassOutput<T>
+ void set(T value)
+
+@FunctionalInterface
+public interface Pass
+ void run()
+
+public abstract class PassModule<T, P extends Pass<T>> extends PrivateModule
+ public abstract Class<? extends P> getPassClass()
+
+
+
+
+Hmm ... scopes:
+ - Module
+ - ModulePass
+ - Function
+ - FunctionPass
+ - FunctionContext?
+  - 'Mutable'?
+ - FunctionAnalysis?
+  - Session scope equivs?
+
+
+
+
+
+
+
+Dependencies:
+ - Commandline / config
+  - Global, per module, per function
+ - Analyses
+  - Global, per module, per function
+  - Persistent, clobbered
+ - Passes
+Products:
+ - Analyses
+ - Statistics
+ - Transformed units
+
+** Planner **
+
+enum PassKind { MODULE, FUNCTION, JMETHOD, JCOMPILATIONUNIT }
+ - JTree?
+ - FunctionThings just nested in a single giant ModuleThing
+Pass
+Analyzer extends Pass
+Transformer extends Pass
+
+AnalyzerFactory::createAnalyzer
+Analyzer::analyze Node T -> Analysis
+
+TransformerFactory::createTransform
+Transformer::transform T -> T
+
+
+/*
+Set<JImportSpec> getImports();
+
+List<JDeclaration> getPreConstructorDeclarations();
+List<JArg> getConstructorArgs();
+List<JStatement> getConstructorStatements();
+List<JDeclaration> getPostConstructorDeclarations();
+
+^^ just helper'd existing passes
+ - add imports
+ - add declarations
+ - modify ctor
+  - add args
+  - add statements
+*/
+
+Set<Name> getReservedNames();
+ - Just a module-level analysis everything happens to depend on?
+  - kinda punkass ghetto if they dont depend on Module
+ - User vs System?
+  Set<Name> getSystemNames()
+  Function<Name, Name> mangleSystemName
+  Function<Name, Name> mangleUserName
+
+Module processModule(Module module);
+Function processFunction(Module module, Function function);
+JMethod processJMethod(Module module, Function function, JMethod jmethod);
+JCompilationUnit processJCompilationUnit(Module module, JCompilationUnit jcompilationUnit);
+
+interface Pass<T> { T process(T t); } // j.u.f.UnaryOperator :3
+interface Compiler<T, R> { R compile(T t); }
+
+Pass<Module>
+Compiler<Module, JCompilationUnit>
+Pass<Function>
+Compiler<Function, JMethod>
+Pass<JMethod>
+Pass<JCompilationUnit>
+
+priorities / positions: floats?
+Module -> JCompilationUnit
+Function -> JMethod
+
+Contexts? yugh.
+Components? yugh.
+
+
+StatementizerComponent
+ StatementizerTransform
+   ControlFlowAnalysis
+   ValueTypeAnalysis
+
+
+abstract Context<T>
+ T subject
+ Map<Class<?>, Object> objects;
+
+Pass<T>
+ Context<T> apply(Context<T> context)
+ <T> T get(Class<> extends T> cls);
+
+Context<Function> functionContext = ...;
+Module module = ((Context<Function>) functionContext).get(Module.class);
+ Context<Function> functionContext = ...;
+ Context<Module> moduleContext = functionContext.get(new ContextKey<Context<Module>>() {});
+
+AnalysisPass
+TransformationPass
+
+
+
+
+        boolean wtf0 = aTrue() & aFalse();
+        boolean wtf1 = aTrue() && aFalse();
+
+        18: aload_0
+        19: invokevirtual #6                  // Method aTrue:()Z
+        22: aload_0
+        23: invokevirtual #7                  // Method aFalse:()Z
+        26: iand
+        27: istore_2
+        28: aload_0
+        29: invokevirtual #6                  // Method aTrue:()Z
+        32: ifeq          46
+        35: aload_0
+        36: invokevirtual #7                  // Method aFalse:()Z
+        39: ifeq          46
+        42: iconst_1
+        43: goto          47
+        46: iconst_0
+        47: istore_3
+
+
+
+
+https://github.com/Celtoys/clReflect sup
+
+--memory-init-file
+https://sites.google.com/site/markusicu/unicode/base16k
+https://gist.github.com/commi/1583588
+
+
+https://en.wikipedia.org/wiki/Dominator_(graph_theory)
+https://en.wikibooks.org/wiki/ROSE_Compiler_Framework/outliner
+
+https://stackoverflow.com/questions/4206679/can-anyone-give-a-good-example-of-using-org-apache-maven-cli-mavencli-programatt
+
+dependencies>
+    <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-embedder</artifactId>
+        <version>3.1.1</version>
+    </dependency>
+    <dependency>
+        <groupId>org.eclipse.aether</groupId>
+        <artifactId>aether-connector-wagon</artifactId>
+        <version>0.9.0.M2</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.maven.wagon</groupId>
+        <artifactId>wagon-http-lightweight</artifactId>
+        <version>2.5</version>
+    </dependency>
+</dependencies>
+
+MavenCli cli = new MavenCli();
+cli.doMain(new String[]{"clean", "compile"}, "project_dir", System.out, System.out);
+
+__cos:
+$2 = 1.0 - ($3 = ($4 = $0 * $0) * 0.5);
+return ($2 + (((1.0 - $2) - $3) + (($4 * (($4 * (($4 * (($4 * 2.480158728947673E-5) + -0.001388888888887411)) + 0.0416666666666666)) + ((($3 = $4 * $4) * $3) * (($4 * (($4 * -1.1359647557788195E-11) + 2.087572321298175E-9)) + -2.7557314351390663E-7)))) - ($0 * $1))));
+
+https://webassembly.github.io/demo/AngryBots/Release/AngryBots.js
+https://github.com/WebAssembly/ilwasm
+
+--
+ - prob gonna win up with a lucene/ei-style attribute map and that's okay
+  - SourceLocation
+  - DeclaredType
+
+
+https://github.com/wrmsr/lljvm/tree/master/java/src/lljvm = MIT
+
+https://github.com/WebAssembly/design/issues/104
+ - https://github.com/juj/emscripten-fastcomp/tree/pthreads sup
+ - https://github.com/WebAssembly/design/issues/300
+
+
+https://github.com/WebAssembly/design/issues/625
+https://github.com/WebAssembly/spec/issues/227 ->
+https://github.com/WebAssembly/spec/pull/234
+https://github.com/WebAssembly/spec/issues/179
+
+
+TODO:
+ - compile-time .class optimizer? ehhhh?
+ - doppio-doped pypyjs-style wasm tracing+jitting jvm?
+  - https://github.com/pypyjs/pypyjs/issues/145
+  - https://github.com/WebAssembly/design/blob/master/FutureFeatures.md#platform-independent-just-in-time-compilation
+
+
+
+https://github.com/headius/invokebinder
+
+
+
+    // TODO: should probably @Inject or contextualize NameGenerator at some point
+    //  - @Inject FunctionScope?
+
+
+tempvalues dominate
+
+uh, fuck:
+ (block block1
+  (block block2
+   (break block1 10)))
+ -> BlockNamer pass? require all blocks to have names? then BlockUnnamer?
+ BreakConverter? make ifs?
+
+TODO return value analysis
+TODO class Switchifier .... :|
+https://github.com/WebAssembly/binaryen/blob/master/test/llvm_autogenerated/switch.wast\#L23
+ - not wast->wast, but not j as it's more general. more an analysis pass that outputs its own tree
+  - naw just a Map<SwitchExpression, SwitchAnalysis>
+ - after temper, requires value-less internal breaks
+ - can still do weird shit like break-ins via lbl:do{...}while(false); blocks as normal, maybe a switchifying threshold
+TODO chopper
+ - hello jruby
+  https://github.com/jruby/jruby/wiki/PerformanceTuning
+
+  jruby.compile.mode=JIT|FORCE|OFF
+     Set compilation mode. JIT is default; FORCE compiles all, OFF disables.
+  jruby.compile.fastest=true|false
+     (EXPERIMENTAL) Turn on all experimental compiler optimizations.
+  jruby.compile.frameless=true|false
+     (EXPERIMENTAL) Turn on frameless compilation where possible.
+  jruby.compile.positionless=true|false
+     (EXPERIMENTAL) Turn on compilation that avoids updating Ruby position info.
+     Default is false
+  jruby.compile.threadless=true|false
+     (EXPERIMENTAL) Turn on compilation without polling for "unsafe" thread events.
+     Default is false.
+  jruby.compile.fastops=true|false
+     (EXPERIMENTAL) Turn on fast operators for Fixnum. Default is false.
+  jruby.compile.fastcase=true|false
+     (EXPERIMENTAL) Turn on fast case/when for all-Fixnum whens. Default is false.
+  jruby.compile.chainsize=<line count>
+     Set the number of lines at which compiled bodies are "chained". Default is 500.
+  jruby.compile.lazyHandles=true|false
+     Generate method bindings (handles) for compiled methods lazily. Default is false.
+  jruby.compile.peephole=true|false
+     Enable or disable peephole optimizations. Default is true (on).
+
+TODO nopremover
+
+pure void
+pure value
+setup value
+temp value
+
+
+
+https://github.com/graalvm/sulong
+ --- ... uh.. is this bsd 3-clause.. ? :D
+
+
+
+int tmp1 = expr1();
+if tmp1 == expr2()
+ !! release tmp1
+{
+  ifTrue
+}
+else
+{
+  ifFalse
+}
+
+pseudo-ops
+ - comment!
+ - acquire
+ - release
+
+
+
+
+
+
+
+
+
+!! JCommentedStatement, JCommentedExpression ( /* */ ) -> src file / linum
+
+lol java->wasm->java->throw = hilariously undefined, wrap
+
+https://github.com/WebAssembly/design/blob/7d1532a40d107fe82fd1ae4724024ca6e66fbe37/AstSemantics.md#floating-point-operators
+ !! There is no observable difference between quiet and signalling NaN.
+
+https://szegedi.github.io/dynalink/
+https://github.com/szegedi/dynalink/wiki/User-Guide-0.7#performing-dynamic-operations-on-objects-from-java
+ - all funcs are interfaced types types ala clj
+  - naw only ones in funcptr map cuz dayum
+jdk.nashorn.internal.runtime.linker.Bootstrap
+
+TempScopePolicy ? tiered for java, flat for bytecode?
+ - fuck it flat
+
+** stealing com.sun.tools.javac.tree.JCTree hierarchy
+
+http://debasishg.blogspot.com/2006/03/non-java-languages-on-jvm.html
+https://blog.balboa.io/emscripten.html
+
+Integer.rotateRight
+
+https://github.com/kripken/emscripten/blob/07b87426f898d6e9c677db291d9088c839197291/site/source/docs/porting/simd.rst
+https://hacks.mozilla.org/2014/10/introducing-simd-js/
+https://blog.mozilla.org/javascript/2015/03/10/state-of-simd-js-performance-in-firefox/
+http://hg.openjdk.java.net/jdk9/jdk9/hotspot/rev/b800986664f4 ... ehehe
+https://developers.opengamma.com/articles/DGEMV.pdf
+https://blogs.msdn.microsoft.com/dotnet/2014/04/07/the-jit-finally-proposed-jit-and-simd-are-getting-married/
+https://msdn.microsoft.com/en-us/library/dn879696(v=vs.110).aspx
+https://github.com/dotnet/coreclr/blob/775003a4c72f0acc37eab84628fcef541533ba4e/src/jit/simd.cpp
+
+
+https://github.com/kripken/emscripten/blob/master/src/library_syscall.js
+https://github.com/kripken/emscripten/blob/master/src/library_signals.js
+https://github.com/kripken/emscripten/blob/master/src/library_pthread.js
+https://github.com/jnr/jnr-posix/blob/master/src/main/java/jnr/posix/LibC.java ayyy
+ - https://github.com/jnr/jnr-posix/issues/73
+ - https://github.com/jnr/jnr-posix/blob/master/LICENSE.txt fuk
+  - https://github.com/jnr/jffi/commit/36b973f46c44efb728bc1db350ec5fd35347553e ...
+
+rt.jar:com.sun.tools.javap sup
+
+nio DMB's
+
+https://github.com/OpenHFT/Chronicle-Core
+https://github.com/OpenHFT/Chronicle-Bytes
+https://github.com/OpenHFT/Chronicle-Values ??
+ - https://github.com/OpenHFT/Chronicle-Values/commit/25dc90353db57962360972f74981853aabbd1339 dammit
+
+interface Typed { Type getType(); }
+interface Valued extends Typed { Expression getValue(); default Type getType() { return getValue().getType(); } }
+interface Named { Name getName(); }
+
+mem: array vs unsafe
+code: bytecode vs src
+just use fukn guice
+
+https://github.com/WebAssembly/polyfill-prototype-2/blob/master/opcodes.ts
+
+llvm webassembly FRONTend...
+graal vec intrinsics
+
+
+lol rebrand nativity?
+
+c++. / c libclang powered binding gen
+hit jni / wava’d libs transparently
+gen java callgates to extern c’s
+structs? gen jni, jnr, native
+ptrs are just longs
+optional mem bounds checks
+and graal
+and panama
+we have asm.js equiv, on TCO and shit just do what it does
+Map<Long, Function>
+… LongObjectHashMap…
+Oo optimize cc push prims natively
+initial mem image bin file in jar memcpy’d unsafe OR java .init src
+inline mem hits OR go through static helpers
+graal tail call opt
+panama mostly about c/c++ interop, complementary but not really overlapping webasm be
+javah
+omfg func ptrs via indy omfg
+ - bahahah i can bring runtime virtual inlining to c++ via fuckin hotspot
+
+LOOOL compile linux src network drivers for mmapped nic comm
+
+
+X-ray stuff
+ - + rewind stuff
+postgresql v MySQL = BSD vs gpl
+Postgresql req fork shm and signals
+Ghetto fork via base ptr reg
+Preemptive memcpy, class emitted with priv final inst|stat base field in diff class loader, jit warm =~ cow
+todo ensure final class from object instanceof == 1 instr -- lolvalhalla
+
+can't fully mirror presto plan machinery
+ - children are not sources
+ - children are occasionally _optional_
+
+** depless wava-runtime prj/jar
+ - embed directly into result jar
+
+
+walkers:
+ - Optional<Expression> vs List<Expression>
+ - flatten blocks vs remove nops
+
+
+
+implicit breaks for blocks
+Implicit names for blocks?
+label name mangler? FML lol
+can vars and labels clash
+
+labeler + breaker
+purifier - returns
+temper - “pure lifter”?
+
+include full source code as comment
+ !! attach to Expressions, Rewriters preserve
+ https://github.com/WebAssembly/spec/issues/258
+ https://github.com/WebAssembly/design/issues/602
+ https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit?pli=1#
+
+
+
+llvm, clang ofc
+sqlite, mysql, postgres
+ - + native drivers
+hotspot lol
+cpython
+ - https://github.com/replit/empythoned
+fukkin linux drivers
+ - https://github.com/scylladb/dpdk/tree/master/examples
+ - dpdk.org
+webkit :|
+crypto, compression
+zmq
+
+
+llvm.js
+j2me.js
+zee.js
+gmp.js
+lzma.js
+ammo.js
+sql.js
+
+
+-- signals and shit, at the end of the day it's just another platform / port
+
+
+java yield(), resurrect kilim
+ninject style concepts / structural types for guice
+
+
+from to
+llvm
+js
+jvm
+webasm
+
+
+
+https://github.com/raphw/byte-buddy ?
+https://github.com/kframework/mpfr-java
+http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/tip/src/share/vm/oops/instanceKlass.hpp#l46
+
+https://github.com/WebAssembly/design/blob/master/AstSemantics.md#floating-point-operators
+http://en.cppreference.com/w/cpp/numeric/math/nan
+
+
+
+http://nodyn.io/
+https://github.com/v8/v8/tree/master/src/wasm
+ - steal its fuzzer
+
+
+
+
+
+http://mreinhold.org/blog/jigsaw-module-system
+https://github.com/kripken/llvm.js
+
+
+
+
+    void startWalk(C context, Module module)
+    {
+        setModule(module);
+
+        for (Import curr : module.getImports()) {
+            visitImport(context, curr);
+        }
+        for (Export curr : module.getExports()) {
+            visitExport(context, curr);
+        }
+
+        Consumer<Function> processFunction = (func) -> {
+            setFunction(func);
+            walk(context, func.getBody().get());
+            visitFunction(context, func);
+            setFunction(null);
+        };
+
+        for (Function curr : module.getFunctions()) {
+            processFunction.accept(curr);
+        }
+
+        visitTable(context, module.getTable());
+        visitMemory(context, module.getMemory());
+        visitModule(context, module);
+    }
+
+lol
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Does not attempt to go deep, use BlockFlattener for that.
+    private static Expression blockify(List<Expression> expressions)
+    {
+        if (expressions.isEmpty()) {
+            return new Nop();
+        }
+        else if (expressions.size() == 1) {
+            return expressions.get(0);
+        }
+        else {
+            return new Block(Optional.empty(), expressions);
+        }
+    }
+
+    private static Expression blockify(VoidFragment fragment)
+    {
+        return blockify(fragment.statements);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public VoidFragment processVoid(Expression expression)
+    {
+        return requireNonNull(expression.accept(new Visitor<Void, VoidFragment>()
+        {
+            @Override
+            protected VoidFragment visitExpression(Expression expression, Void context)
+            {
+                ValueFragment value = processValue(expression);
+                value.temps.forEach(temps::free);
+                return VoidFragment.of(ImmutableList.<Expression>builder()
+                        .addAll(value.statements)
+                        .add(value.value)
+                        .build());
+            }
+
+            @Override
+            public VoidFragment visitBlock(Block expression, Void context)
+            {
+                List<Expression> statements = expression.getList().stream().map(Temper.this::processVoid).flatMap(f -> f.statements.stream()).collect(toImmutableList());
+                return VoidFragment.of(new Block(expression.getName(), statements));
+            }
+
+            @Override
+            public VoidFragment visitBreak(Break expression, Void context)
+            {
+                checkState(!expression.getValue().isPresent());
+                return VoidFragment.of(expression);
+            }
+
+            @Override
+            public VoidFragment visitGetLocal(GetLocal expression, Void context)
+            {
+                return VoidFragment.EMPTY;
+            }
+
+            @Override
+            public VoidFragment visitIf(If expression, Void context)
+            {
+                ValueFragment condition = processValue(expression.getCondition());
+                condition.temps.forEach(temps::free);
+                VoidFragment ifTrue = processVoid(expression.getIfTrue());
+                Optional<VoidFragment> ifFalse = expression.getIfFalse().map(Temper.this::processVoid);
+                return VoidFragment.of(ImmutableList.<Expression>builder()
+                        .addAll(condition.statements)
+                        .add(new If(condition.value, blockify(ifTrue), ifFalse.map(Temper::blockify)))
+                        .build());
+            }
+
+            @Override
+            public VoidFragment visitLoop(Loop expression, Void context)
+            {
+                return VoidFragment.of(new Loop(expression.getOut(), expression.getIn(), blockify(processVoid(expression.getBody()))));
+            }
+
+            @Override
+            public VoidFragment visitNop(Nop expression, Void context)
+            {
+                return VoidFragment.EMPTY;
+            }
+
+            @Override
+            public VoidFragment visitReturn(Return expression, Void context)
+            {
+                Optional<ValueFragment> value = expression.getValue().map(Temper.this::processValue);
+                value.ifPresent(v -> v.temps.forEach(temps::free));
+                return VoidFragment.of(ImmutableList.<Expression>builder()
+                        .addAll(value.orElse(ValueFragment.UNREACHABLE).statements)
+                        .add(new Return(value.map(v -> v.value)))
+                        .build());
+            }
+
+            @Override
+            public VoidFragment visitSelect(Select expression, Void context)
+            {
+                ValueFragment condition = processValue(expression.getCondition());
+                condition.temps.forEach(temps::free);
+                VoidFragment ifTrue = processVoid(expression.getIfTrue());
+                VoidFragment ifFalse = processVoid(expression.getIfFalse());
+                return VoidFragment.of(ImmutableList.<Expression>builder()
+                        .addAll(condition.statements)
+                        .add(new Select(condition.value, blockify(ifTrue), blockify(ifFalse)))
+                        .build());
+            }
+
+            @Override
+            public VoidFragment visitSwitch(Switch expression, Void context)
+            {
+                throw new UnsupportedOperationException(); // FIXME
+            }
+
+            @Override
+            public VoidFragment visitUnary(Unary expression, Void context)
+            {
+                ValueFragment value = processValue(expression.getValue());
+                value.temps.forEach(temps::free);
+                return VoidFragment.of(ImmutableList.<Expression>builder()
+                        .addAll(value.statements)
+                        .add(new Unary(expression.getOp(), value.value, expression.getType()))
+                        .build());
+            }
+
+            @Override
+            public VoidFragment visitUnreachable(Unreachable expression, Void context)
+            {
+                return VoidFragment.of(expression);
+            }
+        }, null));
+    }
+
+    public ValueFragment processValue(Expression expression)
+    {
+        TempAnalysis analysis = requireNonNull(getAnalysis(expression));
+        if (analysis.hasStatement()) {
+            Name temp = temps.get(expression.getType());
+            VoidFragment fragment = processValueIntoTemp(expression, temp);
+            return ValueFragment.of(fragment.statements, new GetLocal(temps.getIndex(temp), expression.getType()), ImmutableSet.of(temp));
+        }
+
+        return requireNonNull(expression.accept(new Visitor<Void, ValueFragment>()
+        {
+            @Override
+            protected ValueFragment visitExpression(Expression expression, Void context)
+            {
+                throw new IllegalStateException();
+            }
+
+            @Override
+            public ValueFragment visitBinary(Binary expression, Void context)
+            {
+                ValueFragment left = processValue(expression.getLeft());
+                ValueFragment right = processValue(expression.getRight());
+                return ValueFragment.of(
+                        ImmutableList.<Expression>builder()
+                                .addAll(left.statements)
+                                .addAll(right.statements)
+                                .build(),
+                        new Binary(expression.getOp(), left.value, right.value),
+                        ImmutableSet.<Name>builder()
+                                .addAll(left.temps)
+                                .addAll(right.temps)
+                                .build());
+            }
+
+            @Override
+            public ValueFragment visitBlock(Block expression, Void context)
+            {
+                return super.visitBlock(expression, context);
+            }
+
+            @Override
+            public ValueFragment visitBreak(Break expression, Void context)
+            {
+                return super.visitBreak(expression, context);
+            }
+
+            @Override
+            public ValueFragment visitCallDirect(Call expression, Void context)
+            {
+                List<ValueFragment> operands = expression.getOperands().stream().map(Temper.this::processValue).collect(toImmutableList());
+                return ValueFragment.of(
+                        ImmutableList.<Expression>builder()
+                                .addAll(operands.stream().flatMap(o -> o.statements.stream()).collect(toImmutableList()))
+                                .build(),
+                        new Call(expression.getTarget(), expression.getType(), operands.stream().map(o -> o.value).collect(toImmutableList())),
+                        ImmutableSet.<Name>builder()
+                                .addAll(operands.stream().flatMap(o -> o.temps.stream()).collect(toImmutableList()))
+                                .build());
+            }
+
+            @Override
+            public ValueFragment visitCallImport(CallImport expression, Void context)
+            {
+                List<ValueFragment> operands = expression.getOperands().stream().map(Temper.this::processValue).collect(toImmutableList());
+                return ValueFragment.of(
+                        ImmutableList.<Expression>builder()
+                                .addAll(operands.stream().flatMap(o -> o.statements.stream()).collect(toImmutableList()))
+                                .build(),
+                        new CallImport(expression.getTarget(), expression.getType(), operands.stream().map(o -> o.value).collect(toImmutableList())),
+                        ImmutableSet.<Name>builder()
+                                .addAll(operands.stream().flatMap(o -> o.temps.stream()).collect(toImmutableList()))
+                                .build());
+            }
+
+            @Override
+            public ValueFragment visitCallIndirect(CallIndirect expression, Void context)
+            {
+                ValueFragment target = processValue(expression.getTarget());
+                List<ValueFragment> operands = expression.getOperands().stream().map(Temper.this::processValue).collect(toImmutableList());
+                return ValueFragment.of(
+                        ImmutableList.<Expression>builder()
+                                .addAll(target.statements)
+                                .addAll(operands.stream().flatMap(o -> o.statements.stream()).collect(toImmutableList()))
+                                .build(),
+                        new CallIndirect(expression.getFullType(), target.value, operands.stream().map(o -> o.value).collect(toImmutableList())),
+                        ImmutableSet.<Name>builder()
+                                .addAll(target.temps)
+                                .addAll(operands.stream().flatMap(o -> o.temps.stream()).collect(toImmutableList()))
+                                .build());
+            }
+
+            @Override
+            public ValueFragment visitConst(Const expression, Void context)
+            {
+                return ValueFragment.of(expression);
+            }
+
+            @Override
+            public ValueFragment visitHost(Host expression, Void context)
+            {
+                List<ValueFragment> operands = expression.getOperands().stream().map(Temper.this::processValue).collect(toImmutableList());
+                return ValueFragment.of(
+                        ImmutableList.<Expression>builder()
+                                .addAll(operands.stream().flatMap(o -> o.statements.stream()).collect(toImmutableList()))
+                                .build(),
+                        new Host(expression.getOp(), expression.getNameOperand(), operands.stream().map(o -> o.value).collect(toImmutableList())),
+                        ImmutableSet.<Name>builder()
+                                .addAll(operands.stream().flatMap(o -> o.temps.stream()).collect(toImmutableList()))
+                                .build());
+            }
+
+            @Override
+            public ValueFragment visitGetLocal(GetLocal expression, Void context)
+            {
+                return ValueFragment.of(expression);
+            }
+
+            @Override
+            public ValueFragment visitLoad(Load expression, Void context)
+            {
+                ValueFragment ptr = processValue(expression.getPtr());
+                return ValueFragment.of(
+                        ptr.statements,
+                        new Load(expression.getBytes(), expression.isSsigned(), expression.getOffset(), expression.getAlign(), ptr.value),
+                        ptr.temps);
+            }
+
+            @Override
+            public ValueFragment visitLoop(Loop expression, Void context)
+            {
+                throw new UnsupportedOperationException(); // FIXME
+            }
+
+            @Override
+            public ValueFragment visitSelect(Select expression, Void context)
+            {
+                return super.visitSelect(expression, context);
+            }
+
+            @Override
+            public ValueFragment visitSetLocal(SetLocal expression, Void context)
+            {
+                ValueFragment value = processValue(expression.getValue());
+                return ValueFragment.of(
+                        value.statements,
+                        new SetLocal(expression.getIndex(), value.value, expression.getType()),
+                        value.temps);
+            }
+
+            @Override
+            public ValueFragment visitStore(Store expression, Void context)
+            {
+                ValueFragment ptr = processValue(expression.getPtr());
+                ValueFragment value = processValue(expression.getValue());
+                ptr.temps.forEach(temps::free);
+                value.temps.forEach(temps::free);
+                return ValueFragment.of(
+                        ImmutableList.<Expression>builder()
+                                .addAll(ptr.statements)
+                                .addAll(value.statements)
+                                .build(),
+                        new Store(expression.getBytes(), expression.getOffset(), expression.getAlign(), ptr.value, value.value),
+                        ImmutableSet.<Name>builder()
+                                .addAll(ptr.temps)
+                                .addAll(value.temps)
+                                .build());
+            }
+
+            @Override
+            public ValueFragment visitSwitch(Switch expression, Void context)
+            {
+                return super.visitSwitch(expression, context);
+            }
+
+            @Override
+            public ValueFragment visitUnary(Unary expression, Void context)
+            {
+                return super.visitUnary(expression, context);
+            }
+
+            @Override
+            public ValueFragment visitUnreachable(Unreachable expression, Void context)
+            {
+                return ValueFragment.of(expression);
+            }
+        }, null));
+    }
+
+    public VoidFragment processValueIntoTemp(Expression expression, Name temp)
+    {
+        return requireNonNull(expression.accept(new Visitor<Void, VoidFragment>()
+        {
+            @Override
+            protected VoidFragment visitExpression(Expression expression, Void context)
+            {
+                ValueFragment value = processValue(expression);
+                value.temps.forEach(temps::free);
+                return VoidFragment.of(ImmutableList.<Expression>builder()
+                        .addAll(value.statements)
+                        .add(new SetLocal(temps.getIndex(temp), value.value, temps.getType(temp)))
+                        .build());
+            }
+
+            @Override
+            public VoidFragment visitBinary(Binary expression, Void context)
+            {
+                return super.visitBinary(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitBlock(Block expression, Void context)
+            {
+                return super.visitBlock(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitBreak(Break expression, Void context)
+            {
+                return super.visitBreak(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitCallDirect(Call expression, Void context)
+            {
+                return super.visitCallDirect(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitCallImport(CallImport expression, Void context)
+            {
+                return super.visitCallImport(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitCallIndirect(CallIndirect expression, Void context)
+            {
+                return super.visitCallIndirect(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitConst(Const expression, Void context)
+            {
+                return super.visitConst(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitHost(Host expression, Void context)
+            {
+                return super.visitHost(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitGetLocal(GetLocal expression, Void context)
+            {
+                return super.visitGetLocal(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitIf(If expression, Void context)
+            {
+                return super.visitIf(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitLoad(Load expression, Void context)
+            {
+                return super.visitLoad(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitLoop(Loop expression, Void context)
+            {
+                return super.visitLoop(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitNop(Nop expression, Void context)
+            {
+                return super.visitNop(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitReturn(Return expression, Void context)
+            {
+                return super.visitReturn(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitSelect(Select expression, Void context)
+            {
+                return super.visitSelect(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitSetLocal(SetLocal expression, Void context)
+            {
+                return super.visitSetLocal(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitStore(Store expression, Void context)
+            {
+                return super.visitStore(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitSwitch(Switch expression, Void context)
+            {
+                return super.visitSwitch(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitUnary(Unary expression, Void context)
+            {
+                return super.visitUnary(expression, context);
+            }
+
+            @Override
+            public VoidFragment visitUnreachable(Unreachable expression, Void context)
+            {
+                return super.visitUnreachable(expression, context);
+            }
+        }, null));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+http://blog.rchapman.org/post/36801038863/linux-system-call-table-for-x86-64
+
+Math_min
+Math_pow
+___assert_fail
+___lock
+___syscall3 ___syscall4
+___syscall5
+___syscall6
+___syscall10
+___syscall15
+___syscall20
+___syscall33
+___syscall39
+___syscall40
+___syscall54 ioctl :/
+___syscall85
+___syscall91
+___syscall94
+___syscall118
+___syscall140
+___syscall146
+___syscall183
+___syscall192
+___syscall194
+___syscall195
+___syscall196
+___syscall197
+___syscall201
+___syscall207
+___syscall212
+___syscall221
+___unlock
+_abort
+_emscripten_memcpy_big
+_getenv
+_gettimeofday
+_localtime
+_nanosleep
+_pthread_cleanup_pop
+_pthread_cleanup_push
+_sbrk
+_sysconf
+_time
+_utimes
+abort
+abortStackOverflow
+f64$2d$to$2d$int
+jsCall_i
+jsCall_ii
+jsCall_iii
+jsCall_iiii
+jsCall_iiiii
+jsCall_iiiiii
+jsCall_iiiiiii
+jsCall_v
+jsCall_vi
+jsCall_vii
+jsCall_viii
+jsCall_viiii
+jsCall_viiiiii
+nullFunc_i
+nullFunc_ii
+nullFunc_iii
+nullFunc_iiii
+nullFunc_iiiii
+nullFunc_iiiiii
+nullFunc_iiiiiii
+nullFunc_v
+nullFunc_vi
+nullFunc_vii
+nullFunc_viii
+nullFunc_viiii
+nullFunc_viiiiii
+
+
+
+
+DDD Math_pow;
+DDD Math_min;
+V abort;
+VI abortStackOverflow;
+VI nullFunc_iiii;
+VI nullFunc_i;
+VI nullFunc_vi;
+VI nullFunc_vii;
+VI nullFunc_iiiiiii;
+VI nullFunc_ii;
+VI nullFunc_viii;
+VI nullFunc_v;
+VI nullFunc_iiiii;
+VI nullFunc_viiiiii;
+VI nullFunc_iii;
+VI nullFunc_iiiiii;
+VI nullFunc_viiii;
+IIIII jsCall_iiii;
+II jsCall_i;
+VII jsCall_vi;
+VIII jsCall_vii;
+IIIIIIII jsCall_iiiiiii;
+III jsCall_ii;
+VIIII jsCall_viii;
+VI jsCall_v;
+IIIIII jsCall_iiiii;
+VIIIIIII jsCall_viiiiii;
+IIII jsCall_iii;
+IIIIIII jsCall_iiiiii;
+VIIIII jsCall_viiii;
+VI _pthread_cleanup_pop;
+III ___syscall221;
+III _utimes;
+III ___syscall40;
+VI ___unlock;
+III ___syscall118;
+VII _pthread_cleanup_push;
+III ___syscall20;
+III ___syscall183;
+VIIII ___assert_fail;
+II _sbrk;
+III ___syscall192;
+III ___syscall197;
+III ___syscall196;
+III ___syscall195;
+III ___syscall194;
+III ___syscall212;
+II _sysconf;
+III ___syscall94;
+III _nanosleep;
+IIII _emscripten_memcpy_big;
+III ___syscall91;
+II _getenv;
+III ___syscall33;
+III ___syscall54;
+III ___syscall85;
+III ___syscall140;
+III ___syscall15;
+III ___syscall6;
+III ___syscall39;
+III ___syscall10;
+III ___syscall3;
+VI ___lock;
+V _abort;
+III ___syscall5;
+III ___syscall4;
+II _time;
+III _gettimeofday;
+III ___syscall201;
+III ___syscall207;
+II _localtime;
+III ___syscall146;
+ID f64$2d$to$2d$int;
+
+
+
+
+
+
+
+optimize:
+
+  5611                                               (block $label$89
+  5612                                                 (br_if $label$89
+  5613                                                   (i32.eqz
+  5614                                                     (set_local $27
+  5615                                                       (i32.load
+  5616                                                         (i32.add
+  5617                                                           (set_local $26
+  5618                                                             (i32.add
+  5619                                                               (i32.load
+  5620                                                                 (get_local $11)
+  5621                                                               )
+  5622                                                               (i32.mul
+  5623                                                                 (i32.load
+  5624                                                                   (i32.add
+  5625                                                                     (get_local $11)
+  5626                                                                     (i32.const 4)
+  5627                                                                   )
+  5628                                                                 )
+  5629                                                                 (i32.const 56)
+  5630                                                               )
+  5631                                                             )
+  5632                                                           )
+  5633                                                           (i32.const 8)
+  5634                                                         )
+  5635                                                       )
+  5636                                                     )
+  5637                                                   )
+  5638                                                 )
+  5639                                                 (call $sqlite3StrAccumAppend
+  5640                                                   (get_local $0)
+  5641                                                   (get_local $27)
+  5642                                                   (i32.const -1)
+  5643                                                 )
+  5644                                                 (call $sqlite3StrAccumAppend
+  5645                                                   (get_local $0)
+  5646                                                   (i32.const 2656)
+  5647                                                   (i32.const 1)
+  5648                                                 )
+  5649                                               )
+
+lol.
