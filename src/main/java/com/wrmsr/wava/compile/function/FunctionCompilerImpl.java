@@ -14,11 +14,13 @@
 package com.wrmsr.wava.compile.function;
 
 import com.google.common.collect.ImmutableList;
+import com.wrmsr.wava.compile.Compilation;
 import com.wrmsr.wava.compile.binary.BinaryCompiler;
 import com.wrmsr.wava.compile.call.CallCompiler;
 import com.wrmsr.wava.compile.call.CallIndirectCompiler;
 import com.wrmsr.wava.compile.const_.ConstCompiler;
 import com.wrmsr.wava.compile.memory.LoadStoreCompiler;
+import com.wrmsr.wava.compile.module.ModuleCompilationParticipant;
 import com.wrmsr.wava.compile.unary.UnaryCompiler;
 import com.wrmsr.wava.core.node.Binary;
 import com.wrmsr.wava.core.node.Block;
@@ -42,14 +44,16 @@ import com.wrmsr.wava.core.node.Switch;
 import com.wrmsr.wava.core.node.Unary;
 import com.wrmsr.wava.core.node.Unreachable;
 import com.wrmsr.wava.core.node.visitor.Visitor;
-import com.wrmsr.wava.core.type.Index;
 import com.wrmsr.wava.core.type.Name;
 import com.wrmsr.wava.core.unit.Function;
-import com.wrmsr.wava.java.lang.JArg;
+import com.wrmsr.wava.java.lang.JAccess;
 import com.wrmsr.wava.java.lang.JName;
 import com.wrmsr.wava.java.lang.JQualifiedName;
 import com.wrmsr.wava.java.lang.JTypeSpecifier;
+import com.wrmsr.wava.java.lang.tree.JInheritance;
+import com.wrmsr.wava.java.lang.tree.declaration.JDeclaration;
 import com.wrmsr.wava.java.lang.tree.declaration.JMethod;
+import com.wrmsr.wava.java.lang.tree.declaration.JType;
 import com.wrmsr.wava.java.lang.tree.expression.JAssignment;
 import com.wrmsr.wava.java.lang.tree.expression.JConditional;
 import com.wrmsr.wava.java.lang.tree.expression.JExpression;
@@ -69,7 +73,7 @@ import com.wrmsr.wava.java.lang.tree.statement.JReturn;
 import com.wrmsr.wava.java.lang.tree.statement.JStatement;
 import com.wrmsr.wava.java.lang.tree.statement.JSwitch;
 import com.wrmsr.wava.java.lang.tree.statement.JThrow;
-import com.wrmsr.wava.java.lang.tree.statement.JVariable;
+import com.wrmsr.wava.java.lang.tree.statement.JWhileLoop;
 
 import javax.inject.Inject;
 
@@ -82,7 +86,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Sets.immutableEnumSet;
 import static com.wrmsr.wava.compile.Compilation.PRIMITIVE_TYPE_MAP;
+import static com.wrmsr.wava.compile.Compilation.compileArgs;
+import static com.wrmsr.wava.compile.Compilation.compileLocalDecls;
 import static com.wrmsr.wava.compile.Compilation.translateCondition;
 import static com.wrmsr.wava.core.node.Nodes.noptional;
 import static com.wrmsr.wava.java.lang.tree.JTrees.jblockify;
@@ -90,7 +97,7 @@ import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 public final class FunctionCompilerImpl
-        implements FunctionCompiler
+        implements FunctionCompiler, ModuleCompilationParticipant
 {
     private final FunctionAccess functionAccess;
     private final BinaryCompiler binaryCompiler;
@@ -120,9 +127,24 @@ public final class FunctionCompilerImpl
     }
 
     @Override
-    public JMethod compileFunction(Function function)
+    public List<JDeclaration> createPreCtorDeclarations()
     {
-        return new Instance(function).compile();
+        return ImmutableList.of(
+                new JType(
+                        immutableEnumSet(JAccess.PUBLIC, JAccess.STATIC, JAccess.FINAL),
+                        JType.Kind.CLASS,
+                        JName.of("UnreachableException"),
+                        ImmutableList.of(
+                                new JInheritance(
+                                        JInheritance.Kind.EXTENDS,
+                                        JQualifiedName.of("java", "lang", "RuntimeException"))),
+                        ImmutableList.of()));
+    }
+
+    @Override
+    public List<JMethod> compileFunction(Function function)
+    {
+        return ImmutableList.of(new Instance(function).compile());
     }
 
     private final class Instance
@@ -137,48 +159,21 @@ public final class FunctionCompilerImpl
 
         private JMethod compile()
         {
-            continueLabels.clear();
-            List<JArg> args = compileArgs();
-            JStatement localDecls = compileLocalDecls();
-            JStatement body = compileStatement(function.getBody());
             return new JMethod(
                     functionAccess.getAccess(),
                     PRIMITIVE_TYPE_MAP.get(function.getResult()),
                     JName.of(function.getName().get()),
-                    args,
-                    Optional.of(jblockify(ImmutableList.of(localDecls, body))));
-        }
-
-        private List<JArg> compileArgs()
-        {
-            return function.getArgLocals().stream()
-                    .map(l -> new JArg(
-                            PRIMITIVE_TYPE_MAP.get(l.getType()),
-                            JName.of(l.getName().get())))
-                    .collect(toImmutableList());
-        }
-
-        private JStatement compileLocalDecls()
-        {
-            return new JBlock(
-                    function.getNonArgLocals().stream()
-                            .map(l -> new JVariable(
-                                    PRIMITIVE_TYPE_MAP.get(l.getType()),
-                                    getLocalName(l.getIndex()),
-                                    Optional.of(new JLiteral(
-                                            l.getType().zero()))))
-                            .collect(toImmutableList()));
+                    compileArgs(function),
+                    Optional.of(
+                            jblockify(
+                                    ImmutableList.of(
+                                            compileLocalDecls(function),
+                                            compileStatement(function.getBody())))));
         }
 
         private JExpression compileCondition(Node condition)
         {
             return translateCondition(compileExpression(condition));
-        }
-
-        private JName getLocalName(Index index)
-        {
-            Name name = function.getLocals().getLocal(index).getName();
-            return JName.of(name.get());
         }
 
         private JStatement compileStatement(Node curr)
@@ -274,9 +269,9 @@ public final class FunctionCompilerImpl
                     continueLabels.add(node.getName());
                     return new JLabeledStatement(
                             JName.of(node.getName().get()),
-                            new JDoWhileLoop(
-                                    jblockify(compileStatement(node.getBody())),
-                                    new JLiteral(false)));
+                            new JWhileLoop(
+                                    new JLiteral(true),
+                                    jblockify(compileStatement(node.getBody()))));
                 }
 
                 @Override
@@ -368,7 +363,7 @@ public final class FunctionCompilerImpl
                 @Override
                 public JExpression visitGetLocal(GetLocal expression, Void context)
                 {
-                    return JIdent.of(getLocalName(expression.getIndex()));
+                    return JIdent.of(Compilation.getLocalName(function, expression.getIndex()));
                 }
 
                 @Override
@@ -401,7 +396,7 @@ public final class FunctionCompilerImpl
                 public JExpression visitSetLocal(SetLocal node, Void context)
                 {
                     return JAssignment.of(
-                            JQualifiedName.of(getLocalName(node.getIndex())),
+                            JQualifiedName.of(Compilation.getLocalName(function, node.getIndex())),
                             compileExpression(node.getValue()));
                 }
 

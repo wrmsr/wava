@@ -71,7 +71,11 @@ public enum BinaryOp
     Lt(FLOATS_TO_I32_MAP, true),
     Le(FLOATS_TO_I32_MAP, true),
     Gt(FLOATS_TO_I32_MAP, true),
-    Ge(FLOATS_TO_I32_MAP, true);
+    Ge(FLOATS_TO_I32_MAP, true),
+
+    // short-circuiting boolean
+    CondAnd(INTS_TO_INT_MAP),
+    CondOr(INTS_TO_INT_MAP);
 
     private final Map<Pair<Type, Type>, Type> typeMap;
     private final boolean isBoolean;

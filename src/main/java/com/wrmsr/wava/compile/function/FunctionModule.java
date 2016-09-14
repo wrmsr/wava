@@ -13,19 +13,24 @@
  */
 package com.wrmsr.wava.compile.function;
 
-import com.google.inject.PrivateModule;
+import com.google.inject.AbstractModule;
+import com.wrmsr.wava.compile.module.ModuleCompilationParticipant;
+import com.wrmsr.wava.driver.ModuleScoped;
 import com.wrmsr.wava.java.lang.JAccess;
 
 import static com.google.common.collect.Sets.immutableEnumSet;
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
 
-public class FunctionModule
-        extends PrivateModule
+public final class FunctionModule
+        extends AbstractModule
 {
     @Override
     protected void configure()
     {
         bind(FunctionAccess.class).toInstance(new FunctionAccess(immutableEnumSet(JAccess.PUBLIC, JAccess.FINAL)));
-        bind(FunctionCompiler.class).to(FunctionCompilerImpl.class).asEagerSingleton();
-        expose(FunctionCompiler.class);
+
+        bind(FunctionCompilerImpl.class).in(ModuleScoped.class);
+        newSetBinder(binder(), ModuleCompilationParticipant.class).addBinding().to(FunctionCompilerImpl.class).in(ModuleScoped.class);
+        bind(FunctionCompiler.class).to(FunctionCompilerImpl.class);
     }
 }

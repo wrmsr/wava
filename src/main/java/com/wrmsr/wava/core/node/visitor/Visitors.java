@@ -15,7 +15,7 @@ package com.wrmsr.wava.core.node.visitor;
 
 import com.wrmsr.wava.core.node.Node;
 
-public class Visitors
+public final class Visitors
 {
     private Visitors()
     {

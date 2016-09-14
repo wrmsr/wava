@@ -23,10 +23,10 @@ import com.wrmsr.wava.core.node.Unary;
 import com.wrmsr.wava.core.op.UnaryOp;
 import com.wrmsr.wava.core.type.Name;
 import com.wrmsr.wava.core.type.Type;
-import com.wrmsr.wava.transform.basic.Basic;
-import com.wrmsr.wava.transform.basic.BasicSet;
-import com.wrmsr.wava.transform.basic.Basics;
-import org.testng.annotations.Test;
+import com.wrmsr.wava.basic.Basic;
+import com.wrmsr.wava.basic.BasicSet;
+import com.wrmsr.wava.basic.Basics;
+import org.junit.Test;
 
 import java.util.Map;
 import java.util.OptionalInt;
@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.wrmsr.wava.core.node.Nodes.nodify;
-import static com.wrmsr.wava.transform.basic.Basics.minBasicIndex;
+import static com.wrmsr.wava.basic.Basics.minBasicIndex;
 import static com.wrmsr.wava.util.Itertools.lazyStream;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;

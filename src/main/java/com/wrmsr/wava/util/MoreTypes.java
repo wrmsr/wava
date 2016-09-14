@@ -37,7 +37,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author jessewilson@google.com (Jesse Wilson)
  */
-public class MoreTypes
+public final class MoreTypes
 {
     public static final Type[] EMPTY_TYPE_ARRAY = new Type[] {};
 

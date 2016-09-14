@@ -13,16 +13,16 @@
  */
 package com.wrmsr.wava.compile.const_;
 
-import com.google.inject.PrivateModule;
+import com.google.inject.AbstractModule;
+import com.wrmsr.wava.driver.ModuleScoped;
 
-// https://docs.oracle.com/javase/tutorial/java/package/namingpkgs.html :|
-public class ConstModule
-        extends PrivateModule
+public final class ConstModule
+        extends AbstractModule
 {
     @Override
     protected void configure()
     {
-        bind(ConstCompiler.class).toInstance(ConstCompilation::compileConst);
-        expose(ConstCompiler.class);
+        bind(ConstCompilerImpl.class).in(ModuleScoped.class);
+        bind(ConstCompiler.class).to(ConstCompilerImpl.class);
     }
 }

@@ -15,12 +15,18 @@ package com.wrmsr.wava;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.squareup.javapoet.CodeBlock;
 import com.wrmsr.wava.analyze.Analyses;
 import com.wrmsr.wava.analyze.ControlTransferAnalysis;
 import com.wrmsr.wava.analyze.LocalAnalysis;
 import com.wrmsr.wava.analyze.ValueTypeAnalysis;
+import com.wrmsr.wava.compile.binary.BinaryCompilerImpl;
+import com.wrmsr.wava.compile.call.CallCompilerImpl;
+import com.wrmsr.wava.compile.call.CallIndirectCompilerImpl;
+import com.wrmsr.wava.compile.const_.ConstCompilerImpl;
+import com.wrmsr.wava.compile.function.FunctionAccess;
+import com.wrmsr.wava.compile.function.FunctionCompilerImpl;
+import com.wrmsr.wava.compile.memory.LoadStoreCompilerImpl;
+import com.wrmsr.wava.compile.unary.UnaryCompilerImpl;
 import com.wrmsr.wava.core.node.Node;
 import com.wrmsr.wava.core.node.Switch;
 import com.wrmsr.wava.core.node.visitor.Visitor;
@@ -30,14 +36,17 @@ import com.wrmsr.wava.core.type.Type;
 import com.wrmsr.wava.core.unit.Function;
 import com.wrmsr.wava.core.unit.Local;
 import com.wrmsr.wava.core.unit.Locals;
+import com.wrmsr.wava.driver.StandardFunctionProcessor;
+import com.wrmsr.wava.java.lang.JAccess;
 import com.wrmsr.wava.java.lang.JRenderer;
 import com.wrmsr.wava.java.lang.tree.declaration.JMethod;
+import com.wrmsr.wava.java.poet.CodeBlock;
 import com.wrmsr.wava.transform.Outlining;
 import com.wrmsr.wava.transform.Transforms;
 import com.wrmsr.wava.util.Json;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +56,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.collect.Sets.immutableEnumSet;
 
 public class TestOutlining
 {
@@ -225,8 +237,16 @@ public class TestOutlining
     private static void compileFunction(Function function)
             throws Throwable
     {
-        function = TestCompilation.processFunction(function);
-        JMethod method = (JMethod) Iterables.getOnlyElement(TestCompilation.jcompileFunction(function));
+        function = new StandardFunctionProcessor().processFunction(function);
+        JMethod method = getOnlyElement(new FunctionCompilerImpl(
+                new FunctionAccess(immutableEnumSet(JAccess.PUBLIC, JAccess.FINAL)),
+                new BinaryCompilerImpl(),
+                new CallCompilerImpl(),
+                new CallIndirectCompilerImpl(),
+                new ConstCompilerImpl(),
+                new LoadStoreCompilerImpl(),
+                new UnaryCompilerImpl()
+        ).compileFunction(function));
 
         CodeBlock.Builder code = CodeBlock.builder();
         new JRenderer(code).renderDeclaration(method);

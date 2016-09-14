@@ -13,7 +13,7 @@
  */
 package com.wrmsr.wava.util.guice;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 public class TestCellBinding
 {

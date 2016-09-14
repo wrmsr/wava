@@ -13,15 +13,29 @@
  */
 package com.wrmsr.wava.compile.module;
 
-import com.google.inject.PrivateModule;
+import com.google.inject.AbstractModule;
+import com.wrmsr.wava.driver.ModuleScoped;
 
-// :(
-public class ModuleModule
-        extends PrivateModule
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
+import static io.airlift.configuration.ConfigBinder.configBinder;
+
+public final class ModuleModule
+        extends AbstractModule
 {
     @Override
     protected void configure()
     {
+        newSetBinder(binder(), ModuleCompilationParticipant.class);
 
+        bind(ImportsCompilerImpl.class).in(ModuleScoped.class);
+        newSetBinder(binder(), ModuleCompilationParticipant.class).addBinding().to(ImportsCompilerImpl.class).in(ModuleScoped.class);
+
+        bind(MultiModuleCompilerImpl.class).in(ModuleScoped.class);
+        bind(ModuleCompiler.class).to(MultiModuleCompilerImpl.class);
+        configBinder(binder()).bindConfig(ModuleCompilerConfig.class);
+        configBinder(binder()).bindConfig(MultiModuleCompilerConfig.class);
+
+        bind(TableCompilerImpl.class).in(ModuleScoped.class);
+        newSetBinder(binder(), ModuleCompilationParticipant.class).addBinding().to(TableCompilerImpl.class).in(ModuleScoped.class);
     }
 }

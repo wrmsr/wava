@@ -19,6 +19,7 @@ import com.wrmsr.wava.java.lang.tree.declaration.JDeclaration;
 import javax.annotation.concurrent.Immutable;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -26,11 +27,11 @@ import static java.util.Objects.requireNonNull;
 @Immutable
 public final class JCompilationUnit
 {
-    private final JPackageSpec packageSpec;
+    private final Optional<JPackageSpec> packageSpec;
     private final Set<JImportSpec> importSpecs;
     private final JDeclaration body;
 
-    public JCompilationUnit(JPackageSpec packageSpec, Set<JImportSpec> importSpecs, JDeclaration body)
+    public JCompilationUnit(Optional<JPackageSpec> packageSpec, Set<JImportSpec> importSpecs, JDeclaration body)
     {
         this.packageSpec = requireNonNull(packageSpec);
         this.importSpecs = ImmutableSet.copyOf(importSpecs);
@@ -58,7 +59,7 @@ public final class JCompilationUnit
         return Objects.hash(packageSpec, importSpecs, body);
     }
 
-    public JPackageSpec getPackageSpec()
+    public Optional<JPackageSpec> getPackageSpec()
     {
         return packageSpec;
     }

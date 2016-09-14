@@ -13,7 +13,7 @@
  */
 package com.wrmsr.wava.compile;
 
-import com.google.inject.PrivateModule;
+import com.google.inject.AbstractModule;
 import com.wrmsr.wava.compile.binary.BinaryModule;
 import com.wrmsr.wava.compile.call.CallModule;
 import com.wrmsr.wava.compile.const_.ConstModule;
@@ -22,8 +22,8 @@ import com.wrmsr.wava.compile.memory.MemoryModule;
 import com.wrmsr.wava.compile.module.ModuleModule;
 import com.wrmsr.wava.compile.unary.UnaryModule;
 
-public class CompileModule
-        extends PrivateModule
+public final class CompileModule
+        extends AbstractModule
 {
     @Override
     protected void configure()
@@ -35,8 +35,5 @@ public class CompileModule
         install(new MemoryModule());
         install(new ModuleModule());
         install(new UnaryModule());
-
-//        laksdjf
-//        bind(new TypeLiteral<List<Function<JMethod, JMethod>>>() {}).in(FunctionContextScoped.class);
     }
 }

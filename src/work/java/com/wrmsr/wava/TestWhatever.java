@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableSet;
 import com.wrmsr.wava.analyze.Analyses;
 import com.wrmsr.wava.analyze.ControlFlowGraph;
 import com.wrmsr.wava.analyze.ValueTypeAnalysis;
+import com.wrmsr.wava.core.node.Binary;
 import com.wrmsr.wava.core.node.Block;
 import com.wrmsr.wava.core.node.Break;
 import com.wrmsr.wava.core.node.BreakTable;
@@ -27,18 +28,20 @@ import com.wrmsr.wava.core.node.Loop;
 import com.wrmsr.wava.core.node.Node;
 import com.wrmsr.wava.core.node.Nop;
 import com.wrmsr.wava.core.node.Unary;
+import com.wrmsr.wava.core.op.BinaryOp;
 import com.wrmsr.wava.core.op.UnaryOp;
 import com.wrmsr.wava.core.type.Name;
 import com.wrmsr.wava.core.type.Type;
 import com.wrmsr.wava.core.unit.Module;
-import com.wrmsr.wava.transform.basic.Basic;
-import com.wrmsr.wava.transform.basic.BasicDominatorInfo;
-import com.wrmsr.wava.transform.basic.BasicLoopInfo;
-import com.wrmsr.wava.transform.basic.BasicSet;
-import com.wrmsr.wava.transform.basic.Basics;
-import com.wrmsr.wava.transform.basic.match.BooleanMatching;
-import com.wrmsr.wava.transform.basic.match.LoopMatching;
-import com.wrmsr.wava.transform.basic.match.SimpleMatching;
+import com.wrmsr.wava.driver.StandardFunctionProcessor;
+import com.wrmsr.wava.basic.Basic;
+import com.wrmsr.wava.basic.BasicDominatorInfo;
+import com.wrmsr.wava.basic.BasicLoopInfo;
+import com.wrmsr.wava.basic.BasicSet;
+import com.wrmsr.wava.basic.Basics;
+import com.wrmsr.wava.basic.match.BooleanMatching;
+import com.wrmsr.wava.basic.match.LoopMatching;
+import com.wrmsr.wava.basic.match.SimpleMatching;
 import com.wrmsr.wava.yen.global.YModule;
 import com.wrmsr.wava.yen.parser.ModuleFactory;
 import com.wrmsr.wava.yen.parser.Parser;
@@ -46,7 +49,7 @@ import com.wrmsr.wava.yen.parser.element.Element;
 import com.wrmsr.wava.yen.parser.input.Input;
 import com.wrmsr.wava.yen.translation.UnitTranslation;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import javax.annotation.CheckReturnValue;
 
@@ -54,16 +57,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.wrmsr.wava.TestCompilation.processFunction;
 import static com.wrmsr.wava.TestGraphviz.showGraph;
 import static com.wrmsr.wava.core.node.Nodes.nodify;
-import static com.wrmsr.wava.transform.basic.Basics.minBasicIndex;
-import static com.wrmsr.wava.transform.basic.Basics.transformBasics;
+import static com.wrmsr.wava.basic.Basics.getUnconditionalTarget;
+import static com.wrmsr.wava.basic.Basics.minBasicIndex;
+import static com.wrmsr.wava.basic.Basics.transformBasics;
+import static com.wrmsr.wava.basic.match.BooleanMatching.matchBoolean;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toIdentityMap;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableSet;
@@ -75,8 +81,6 @@ import static java.util.Objects.requireNonNull;
 
 public class TestWhatever
 {
-    // also this is garbage generalize this somehow
-
     @CheckReturnValue
     private static BasicSet shrinkSimpleLoop(BasicLoopInfo li, BasicSet basics, Basic basic)
     {
@@ -142,6 +146,64 @@ public class TestWhatever
         return basics;
     }
 
+//    public static final class MatchedIfOr
+//    {
+//        public final Node condition;
+//    }
+
+//    public static Stream<BasicSet> collapseIfAnd(BasicSet basics, Basic basic)
+//    {
+//
+//    }
+
+    public static Stream<BasicSet> collapseIfOr(BasicSet basics, Basic basic)
+    {
+        return matchBoolean(basic)
+                .flatMap(m1 -> {
+                    Basic or = basics.get(m1.ifFalse);
+                    if (!or.getBody().isEmpty() || !basics.getInputs(or).equals(ImmutableSet.of(basic.getName()))) {
+                        return Stream.empty();
+                    }
+                    Basic then = basics.get(m1.ifTrue);
+                    if (!basics.getInputs(then).equals(ImmutableSet.of(basic.getName(), or.getName()))) {
+                        return Stream.empty();
+                    }
+                    Optional<Name> after = getUnconditionalTarget(then.getBreakTable());
+                    if (!after.isPresent()) {
+                        return Stream.empty();
+                    }
+                    return matchBoolean(or)
+                            .flatMap(m2 -> {
+                                if (!m2.ifTrue.equals(then.getName()) || !m2.ifFalse.equals(after.get())) {
+                                    return Stream.empty();
+                                }
+                                Basic newBasic = new Basic(
+                                        basic.getName(),
+                                        ImmutableList.<Node>builder()
+                                                .addAll(basic.getBody())
+                                                .add(
+                                                        new If(
+                                                                new Binary(
+                                                                        BinaryOp.CondOr,
+                                                                        Type.I32,
+                                                                        m1.condition,
+                                                                        m2.condition),
+                                                                nodify(then.getBody()),
+                                                                new Nop()))
+                                                .build(),
+                                        new BreakTable(
+                                                ImmutableList.of(),
+                                                after.get(),
+                                                new Nop()),
+                                        minBasicIndex(basic, or, then));
+                                return Stream.of(basics
+                                        .replace(newBasic)
+                                        .remove(or)
+                                        .remove(then));
+                            });
+                });
+    }
+
     // technical af
 //    private static void shrinkLoopSandwiches(Map<Name, Basic> basics, Multimap<Name, Name> inputs, Set<Name> loops, Multimap<Name, Name> backEdges)
 //    {
@@ -191,7 +253,8 @@ public class TestWhatever
             Set<Name> domFront = dt.getDominanceFrontiers().get(basic.getName());
             boolean isLoop = li.isLoop(basic.getName());
             boolean isIf = !isLoop && basic.getAllTargets().size() == 2; // FIXME WRONG 1035
-            String nodeStyle = isLoop ? "fillcolor=blue,style=filled" : isIf ? "fillcolor=green,style=filled" : "";
+            boolean isSingle = basics.getInputs(basic).size() == 1 && basic.getAllTargets().size() == 1;
+            String nodeStyle = isLoop ? "fillcolor=blue,style=filled" : isIf ? "fillcolor=green,style=filled" : isSingle ? "fillcolor=orange,style=filled" : "";
             int totalSize = basic.getBody().stream().mapToInt(Analyses::getChildCount).sum();
             sb.append(String.format("%s [label=\"%s: %d, %d, %d\",%s];\n", nameMangler.apply(basic.getName()), basic.getName().get(), basic.getIndex().getAsInt(), basic.getBody().size(), totalSize, nodeStyle));
             if (drawDoms) {
@@ -257,7 +320,7 @@ public class TestWhatever
             throws Exception
     {
         System.out.println(function_.getName().get());
-        com.wrmsr.wava.core.unit.Function function = processFunction(function_);
+        com.wrmsr.wava.core.unit.Function function = new StandardFunctionProcessor().processFunction(function_);
 
         BasicSet basics;
         {
@@ -297,6 +360,7 @@ public class TestWhatever
             basics = transformBasics(BooleanMatching::shrinkIfElse, basics);
             basics = transformBasics(bind(LoopMatching::shrinkSelfLoops, BasicLoopInfo.build(basics, BasicDominatorInfo.build(basics)))::apply, basics);
             basics = transformBasics(bind(TestWhatever::shrinkSimpleLoop, BasicLoopInfo.build(basics, BasicDominatorInfo.build(basics)))::apply, basics);
+            basics = transformBasics(TestWhatever::collapseIfOr, basics);
 
             if (basics.size() == size) {
                 break;
@@ -344,7 +408,7 @@ public class TestWhatever
             throws Throwable
     {
         String target;
-//        target = "sqlite3VdbeExec";
+        target = "sqlite3VdbeExec";
 //        target = "yy_reduce";
         target = "sqlite3VXPrintf";
 //        target = "sqlite3Error";

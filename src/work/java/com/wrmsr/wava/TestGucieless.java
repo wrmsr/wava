@@ -25,7 +25,7 @@ import com.wrmsr.wava.transform.statementizer.StatementizerTransform;
 import com.wrmsr.wava.util.NameGenerator;
 import com.wrmsr.wava.util.TypeKey;
 import com.wrmsr.wava.util.temps.TempManager;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.lang.reflect.Type;
 import java.util.Map;

@@ -22,7 +22,7 @@ import com.wrmsr.wava.yen.parser.Parser;
 import com.wrmsr.wava.yen.parser.element.Element;
 import com.wrmsr.wava.yen.parser.input.Input;
 import com.wrmsr.wava.yen.translation.UnitTranslation;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;

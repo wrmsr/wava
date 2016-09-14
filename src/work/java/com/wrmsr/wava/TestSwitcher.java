@@ -27,7 +27,7 @@ import com.wrmsr.wava.core.node.Switch;
 import com.wrmsr.wava.core.type.Name;
 import com.wrmsr.wava.transform.Switchification;
 import com.wrmsr.wava.util.Json;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

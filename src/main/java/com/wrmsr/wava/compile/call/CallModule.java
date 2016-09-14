@@ -13,14 +13,23 @@
  */
 package com.wrmsr.wava.compile.call;
 
-import com.google.inject.PrivateModule;
+import com.google.inject.AbstractModule;
+import com.wrmsr.wava.compile.module.ModuleCompilationParticipant;
+import com.wrmsr.wava.driver.ModuleScoped;
 
-public class CallModule
-        extends PrivateModule
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
+
+public final class CallModule
+        extends AbstractModule
 {
     @Override
     protected void configure()
     {
+        bind(CallCompilerImpl.class).in(ModuleScoped.class);
+        newSetBinder(binder(), ModuleCompilationParticipant.class).addBinding().to(CallCompilerImpl.class).in(ModuleScoped.class);
+        bind(CallCompiler.class).to(CallCompilerImpl.class);
 
+        bind(CallIndirectCompilerImpl.class).in(ModuleScoped.class);
+        bind(CallIndirectCompiler.class).to(CallIndirectCompilerImpl.class);
     }
 }

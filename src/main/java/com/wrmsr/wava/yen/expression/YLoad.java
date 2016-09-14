@@ -41,7 +41,7 @@ public final class YLoad
 {
     private final Type type;
     private final int bytes;
-    private final boolean isSsigned;
+    private final boolean signed;
     private final int offset;
     private final int align;
     private final YExpression ptr;
@@ -50,14 +50,14 @@ public final class YLoad
     public YLoad(
             @JsonProperty("type") Type type,
             @JsonProperty("bytes") int bytes,
-            @JsonProperty("signed") boolean isSsigned,
+            @JsonProperty("signed") boolean signed,
             @JsonProperty("offset") int offset,
             @JsonProperty("align") int align,
             @JsonProperty("ptr") YExpression ptr)
     {
         this.type = type;
         this.bytes = bytes;
-        this.isSsigned = isSsigned;
+        this.signed = signed;
         this.offset = offset;
         this.align = align;
         this.ptr = requireNonNull(ptr);
@@ -74,7 +74,7 @@ public final class YLoad
         }
         YLoad yLoad = (YLoad) o;
         return bytes == yLoad.bytes &&
-                isSsigned == yLoad.isSsigned &&
+                signed == yLoad.signed &&
                 offset == yLoad.offset &&
                 align == yLoad.align &&
                 type == yLoad.type &&
@@ -84,7 +84,7 @@ public final class YLoad
     @Override
     public int hashCode()
     {
-        return Objects.hash(type, bytes, isSsigned, offset, align, ptr);
+        return Objects.hash(type, bytes, signed, offset, align, ptr);
     }
 
     @JsonProperty("type")
@@ -100,13 +100,13 @@ public final class YLoad
         return bytes;
     }
 
-    @JsonProperty("isSigned")
-    public boolean isSsigned()
+    @JsonProperty("signed")
+    public boolean isSigned()
     {
-        return isSsigned;
+        return signed;
     }
 
-    @JsonProperty("signed")
+    @JsonProperty("offset")
     public int getOffset()
     {
         return offset;

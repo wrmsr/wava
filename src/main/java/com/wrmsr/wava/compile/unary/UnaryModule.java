@@ -13,15 +13,20 @@
  */
 package com.wrmsr.wava.compile.unary;
 
-import com.google.inject.PrivateModule;
+import com.google.inject.AbstractModule;
+import com.wrmsr.wava.compile.module.ModuleCompilationParticipant;
+import com.wrmsr.wava.driver.ModuleScoped;
 
-public class UnaryModule
-        extends PrivateModule
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
+
+public final class UnaryModule
+        extends AbstractModule
 {
     @Override
     protected void configure()
     {
-        bind(UnaryCompiler.class).toInstance(UnaryCompilation::compileUnary);
-        expose(UnaryCompiler.class);
+        bind(UnaryCompilerImpl.class).in(ModuleScoped.class);
+        newSetBinder(binder(), ModuleCompilationParticipant.class).addBinding().to(UnaryCompilerImpl.class).in(ModuleScoped.class);
+        bind(UnaryCompiler.class).to(UnaryCompilerImpl.class);
     }
 }

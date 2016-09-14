@@ -669,7 +669,7 @@ public final class StatementizerTransform
                     checkPure(ret);
                     return ret;
                 }
-                // FIXME delete cuz sdelect
+                // FIXME delete cuz select
                 else if (vta.getType().isConcrete() && vta.isUsed()) {
                     Fragment condition = transform(node.getCondition(), temp);
                     checkValue(condition);
@@ -845,9 +845,8 @@ public final class StatementizerTransform
             @Override
             public Fragment visitUnreachable(Unreachable node, Void context)
             {
-                return new PureFragment(
-                        ImmutableList.of(),
-                        node);
+                return new VoidFragment(
+                        ImmutableList.of(node));
             }
         }, null);
     }

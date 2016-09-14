@@ -197,7 +197,7 @@ public final class NodeTranslation
                 return new Load(
                         expression.getType(),
                         expression.getBytes(),
-                        expression.isSsigned(),
+                        expression.isSigned(),
                         expression.getOffset(),
                         expression.getAlign(),
                         expression.getPtr().accept(this, context));

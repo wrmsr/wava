@@ -16,8 +16,10 @@ package com.wrmsr.wava.compile.function;
 import com.wrmsr.wava.java.lang.tree.declaration.JMethod;
 import com.wrmsr.wava.core.unit.Function;
 
+import java.util.List;
+
 @FunctionalInterface
 public interface FunctionCompiler
 {
-    JMethod compileFunction(Function function);
+    List<JMethod> compileFunction(Function function);
 }

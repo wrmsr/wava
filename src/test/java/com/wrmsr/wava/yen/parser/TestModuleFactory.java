@@ -17,7 +17,7 @@ import com.wrmsr.wava.core.type.Name;
 import com.wrmsr.wava.yen.global.YModule;
 import com.wrmsr.wava.yen.parser.element.Element;
 import com.wrmsr.wava.yen.parser.input.Input;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import static com.wrmsr.wava.util.Json.toPrettyJson;
 
