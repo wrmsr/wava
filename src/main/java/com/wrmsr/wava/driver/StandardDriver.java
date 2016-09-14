@@ -42,6 +42,7 @@ import com.wrmsr.wava.core.type.Name;
 import com.wrmsr.wava.core.unit.Function;
 import com.wrmsr.wava.core.unit.Module;
 import com.wrmsr.wava.java.lang.JAccess;
+import com.wrmsr.wava.java.lang.JName;
 import com.wrmsr.wava.java.lang.JQualifiedName;
 import com.wrmsr.wava.java.lang.JRenderer;
 import com.wrmsr.wava.java.lang.compilationUnit.JCompilationUnit;
@@ -126,8 +127,10 @@ public final class StandardDriver
                         (ModuleCompilationParticipant) unaryCompiler,
                         (ModuleCompilationParticipant) functionCompiler),
                 functionCompiler,
-                new ModuleCompilerConfig().setPackageName(packageName.map(JQualifiedName::join).orElse(null)),
-                new MultiModuleCompilerConfig().setNumFunctionsPerClass(100));
+                new ModuleCompilerConfig()
+                        .setPackageName(packageName.map(JQualifiedName::join).orElse(null)),
+                new MultiModuleCompilerConfig()
+                        .setNumFunctionsPerClass(100));
 
         FunctionProcessor functionProcessor = new StandardFunctionProcessor();
         List<Function> functions = module.getFunctions().entrySet().stream()

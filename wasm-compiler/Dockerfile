@@ -8,6 +8,13 @@
 # bin/llc -asm-verbose=false bin/emscripten/tests/sqlite/sqlite3.bc -o bin/emscripten/tests/sqlite/sqlite3.s
 # bin/s2wasm bin/emscripten/tests/sqlite/sqlite3.s > bin/emscripten/tests/sqlite/sqlite3.wast
 
+# wasm-install/bin/clang -I wasm-install/sysroot/include --target=wasm32 -emit-llvm -c a.c -o a.bc
+# wasm-install/bin/llvm-dis a.bc
+# wasm-install/bin/llc -asm-verbose=false a.bc -o a.s
+# wasm-install/bin/s2wasm a.s > a.wast
+
+# wasm-install/bin/clang -I wasm-install/sysroot/include --target=wasm32 -emit-llvm -O0 -fno-inline -c a.c -o a.bc && wasm-install/bin/llvm-dis a.bc && wasm-install/bin/llc -asm-verbose=false a.bc -o a.s && wasm-install/bin/s2wasm a.s > a.wast
+
 # git clone https://github.com/WebAssembly/musl/
 # cd musl
 # git checkout wasm-prototype-1

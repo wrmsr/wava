@@ -128,7 +128,7 @@ public final class JQualifiedName
 
     public String join()
     {
-        return Joiner.on('.').join(parts);
+        return Joiner.on('.').join(parts.stream().map(JName::get).collect(toImmutableList()));
     }
 
     public boolean startsWith(JQualifiedName prefix)
