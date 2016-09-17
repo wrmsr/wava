@@ -14,13 +14,16 @@
 package com.wrmsr.wava.util;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
@@ -242,5 +245,25 @@ public final class Itertools
     public static <T> Stream<T> flatten(Stream<Stream<T>> stream)
     {
         return stream.flatMap(identity());
+    }
+
+    public static <T extends AutoCloseable, R> R withCloseables(Iterator<? extends T> iterator, ImmutableList.Builder<T> builder, Function<List<T>, R> function)
+            throws Exception
+    {
+        if (iterator.hasNext()) {
+            try (T item = iterator.next()) {
+                builder.add(item);
+                return withCloseables(iterator, builder, function);
+            }
+        }
+        else {
+            return function.apply(builder.build());
+        }
+    }
+
+    public static <T extends AutoCloseable, R> R withCloseables(Iterable<? extends T> iterable, Function<List<T>, R> function)
+            throws Exception
+    {
+        return withCloseables(iterable.iterator(), ImmutableList.builder(), function);
     }
 }
