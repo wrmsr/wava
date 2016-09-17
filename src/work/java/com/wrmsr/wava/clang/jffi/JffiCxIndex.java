@@ -46,7 +46,6 @@ final class JffiCxIndex
     public CxTranslationUnit parseTranslationUnit(String sourceFilename, String commandLineArgs, Set<CxTranslationUnitFlags> options)
             throws CxException
     {
-        runtime.memoryIO.
         return null;
     }
 }

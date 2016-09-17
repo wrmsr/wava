@@ -43,6 +43,10 @@ import java.util.regex.Pattern;
 
 final class JffiUtils
 {
+    private JffiUtils()
+    {
+    }
+
     private static final Pattern BAD_ELF = Pattern.compile("(.*): (invalid ELF header|file too short|invalid file format)");
     private static final Pattern ELF_GROUP = Pattern.compile("GROUP\\s*\\(\\s*(\\S*).*\\)");
 
@@ -98,7 +102,7 @@ final class JffiUtils
     }
 
     static final class Address
-            extends java.lang.Number
+            extends Number
     {
         final int SIZE = Platform.getPlatform().addressSize();
         final long MASK = Platform.getPlatform().addressMask();
@@ -140,7 +144,7 @@ final class JffiUtils
         }
     }
 
-    static class HeapArrayStrategy
+    static final class HeapArrayStrategy
             extends ObjectParameterStrategy
     {
         private int offset, length;
@@ -177,7 +181,7 @@ final class JffiUtils
         }
     }
 
-    static class DirectStrategy
+    static final class DirectStrategy
             extends ObjectParameterStrategy
     {
 
@@ -214,9 +218,6 @@ final class JffiUtils
     enum InvokerType
     {
         Default,
-        FastInt,
-        FastLong,
-        FastNumeric,
         PointerArray
     }
 
@@ -230,7 +231,7 @@ final class JffiUtils
      * @return a new instance of <tt>interfaceClass</tt> that can be used to call
      * functions in the native library.
      */
-    public static <T> T loadLibrary(String name, Class<T> interfaceClass, InvokerType invokerType)
+    static <T> T loadLibrary(String name, Class<T> interfaceClass, InvokerType invokerType)
     {
         Library lib = Library.getCachedInstance(name, Library.LAZY);
         if (lib == null) {
@@ -240,21 +241,6 @@ final class JffiUtils
         return interfaceClass.cast(Proxy.newProxyInstance(interfaceClass.getClassLoader(),
                 new Class[] {interfaceClass},
                 new NativeInvocationHandler(lib, invokerType)));
-    }
-
-    private static final class LibraryHolder
-    {
-        static final Library libtest = Library.getCachedInstance(
-                new File("build", Platform.getPlatform().mapLibraryName("test")).getAbsolutePath(), Library.LAZY);
-    }
-
-    public static Address findSymbol(String name)
-    {
-        final long address = LibraryHolder.libtest.getSymbolAddress(name);
-        if (address == 0L) {
-            throw new UnsatisfiedLinkError("Could not locate symbol '" + name + "'");
-        }
-        return new Address(address);
     }
 
     private static final class NativeInvocationHandler
@@ -310,12 +296,6 @@ final class JffiUtils
         }
         Function function = new Function(address, ffiReturnType, ffiParameterTypes);
         switch (invokerType) {
-            case FastInt:
-                return new FastIntMethodInvoker(library, function, returnType, parameterTypes);
-            case FastLong:
-                return new FastLongMethodInvoker(library, function, returnType, parameterTypes);
-            case FastNumeric:
-                return new FastNumericMethodInvoker(library, function, returnType, parameterTypes);
             case PointerArray:
                 return new PointerArrayMethodInvoker(library, function, returnType, parameterTypes);
             case Default:
@@ -446,188 +426,11 @@ final class JffiUtils
         }
     }
 
-    private static Number convertResult(Class returnType, Number result)
-    {
-        if (returnType == void.class || returnType == Void.class) {
-            return null;
-        }
-        else if (returnType == byte.class || returnType == Byte.class) {
-            return result.byteValue();
-        }
-        else if (returnType == short.class || returnType == Short.class) {
-            return result.shortValue();
-        }
-        else if (returnType == int.class || returnType == Integer.class) {
-            return result.intValue();
-        }
-        else if (returnType == long.class || returnType == Long.class) {
-            return result.longValue();
-        }
-        else if (returnType == float.class || returnType == Float.class) {
-            return Float.intBitsToFloat(result.intValue());
-        }
-        else if (returnType == double.class || returnType == Double.class) {
-            return Double.longBitsToDouble(result.longValue());
-        }
-        else if (Address.class.isAssignableFrom(returnType)) {
-            return new Address(result.longValue());
-        }
-        throw new RuntimeException("Unknown return type: " + returnType);
-    }
-
-    private static final class FastIntMethodInvoker
-            implements MethodInvoker
-    {
-        private final Library library;
-        private final Function function;
-        private final Class returnType;
-        private final Class[] parameterTypes;
-
-        FastIntMethodInvoker(Library library, Function function, Class returnType, Class[] parameterTypes)
-        {
-            this.library = library;
-            this.function = function;
-            this.returnType = returnType;
-            this.parameterTypes = parameterTypes;
-        }
-
-        private static boolean isFloat(Class c)
-        {
-            return Float.class.isAssignableFrom(c) || float.class == c;
-        }
-
-        private static int i(Object value)
-        {
-            return value instanceof Float
-                    ? Float.floatToRawIntBits(((Float) value).floatValue())
-                    : ((Number) value).intValue();
-        }
-
-        @Override
-        public Object invoke(Object[] args)
-        {
-            final int result;
-            switch (args.length) {
-                case 0:
-                    result = Invoker.getInstance().invokeI0(function.getCallContext(), function.getFunctionAddress());
-                    break;
-                case 1:
-                    result = Invoker.getInstance().invokeI1(function.getCallContext(), function.getFunctionAddress(), i(args[0]));
-                    break;
-                case 2:
-                    result = Invoker.getInstance().invokeI2(function.getCallContext(), function.getFunctionAddress(),
-                            ((Number) args[0]).intValue(), ((Number) args[1]).intValue());
-                    break;
-                case 3:
-                    result = Invoker.getInstance().invokeI3(function.getCallContext(), function.getFunctionAddress(),
-                            ((Number) args[0]).intValue(), ((Number) args[1]).intValue(), ((Number) args[2]).intValue());
-                    break;
-                default:
-                    throw new IndexOutOfBoundsException("fast-int invoker limited to 3 parameters");
-            }
-            return convertResult(returnType, result);
-        }
-    }
-
-    private static final class FastLongMethodInvoker
-            implements MethodInvoker
-    {
-        private final Library library;
-        private final Function function;
-        private final Class returnType;
-        private final Class[] parameterTypes;
-
-        FastLongMethodInvoker(Library library, Function function, Class returnType, Class[] parameterTypes)
-        {
-            this.library = library;
-            this.function = function;
-            this.returnType = returnType;
-            this.parameterTypes = parameterTypes;
-        }
-
-        @Override
-        public Object invoke(Object[] args)
-        {
-            final long result;
-            switch (args.length) {
-                case 0:
-                    result = Invoker.getInstance().invokeL0(function.getCallContext(), function.getFunctionAddress());
-                    break;
-                case 1:
-                    result = Invoker.getInstance().invokeL1(function.getCallContext(), function.getFunctionAddress(), ((Number) args[0]).longValue());
-                    break;
-                case 2:
-                    result = Invoker.getInstance().invokeL2(function.getCallContext(), function.getFunctionAddress(),
-                            ((Number) args[0]).longValue(), ((Number) args[1]).longValue());
-                    break;
-                case 3:
-                    result = Invoker.getInstance().invokeL3(function.getCallContext(), function.getFunctionAddress(),
-                            ((Number) args[0]).longValue(), ((Number) args[1]).longValue(), ((Number) args[2]).longValue());
-                    break;
-                default:
-                    throw new IndexOutOfBoundsException("fast-long invoker limited to 3 parameters");
-            }
-            return convertResult(returnType, result);
-        }
-    }
-
-    private static final class FastNumericMethodInvoker
-            implements MethodInvoker
-    {
-        private final Library library;
-        private final Function function;
-        private final Class returnType;
-        private final Class[] parameterTypes;
-
-        FastNumericMethodInvoker(Library library, Function function, Class returnType, Class[] parameterTypes)
-        {
-            this.library = library;
-            this.function = function;
-            this.returnType = returnType;
-            this.parameterTypes = parameterTypes;
-        }
-
-        @Override
-        public Object invoke(Object[] args)
-        {
-            final long result;
-            switch (args.length) {
-                case 0:
-                    result = Invoker.getInstance().invokeN0(function.getCallContext(), function.getFunctionAddress());
-                    break;
-                case 1:
-                    result = Invoker.getInstance().invokeN1(function.getCallContext(), function.getFunctionAddress(), l(args[0]));
-                    break;
-                case 2:
-                    result = Invoker.getInstance().invokeN2(function.getCallContext(), function.getFunctionAddress(), l(args[0]), l(args[1]));
-                    break;
-                case 3:
-                    result = Invoker.getInstance().invokeN3(function.getCallContext(), function.getFunctionAddress(), l(args[0]), l(args[1]), l(args[1]));
-                    break;
-                default:
-                    throw new IndexOutOfBoundsException("fast-numeric invoker limited to 3 parameters");
-            }
-            return convertResult(returnType, result);
-        }
-
-        private static long l(Object arg)
-        {
-            if (arg instanceof Float) {
-                return Float.floatToRawIntBits(((Float) arg).floatValue());
-            }
-            else if (arg instanceof Double) {
-                return Double.doubleToRawLongBits(((Double) arg).doubleValue());
-            }
-            else {
-                return ((Number) arg).longValue();
-            }
-        }
-    }
-
     private static final class PointerArrayMethodInvoker
             implements MethodInvoker
     {
         private static final MemoryIO Memory = MemoryIO.getInstance();
+
         private final Library library;
         private final Function function;
         private final Class returnType;

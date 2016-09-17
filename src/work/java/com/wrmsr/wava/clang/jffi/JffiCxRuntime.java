@@ -15,23 +15,17 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.google.common.base.Throwables;
-import com.kenai.jffi.CallContext;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
-import com.kenai.jffi.ObjectParameterInfo;
-import com.kenai.jffi.ObjectParameterStrategy;
 import com.kenai.jffi.Type;
 import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxRuntime;
 import com.wrmsr.wava.clang.CxString;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -196,23 +190,4 @@ public final class JffiCxRuntime
         argPopulator.accept(ib);
         return invoker.invokeInt(function, ib);
     }
-
-    public static boolean string_equals(Invoker invoker, String s1, String s2) {
-        Function function = getFunction("string_equals", Type.SINT, Type.POINTER, Type.POINTER);
-        CallContext ctx = getContext(Type.SINT, Type.POINTER, Type.POINTER);
-        ByteBuffer s1Buffer = Charset.defaultCharset().encode(CharBuffer.wrap(s1));
-        ByteBuffer s2Buffer  = Charset.defaultCharset().encode(CharBuffer.wrap(s2));
-
-        ObjectParameterStrategy s1strategy = new HeapArrayStrategy(s1Buffer.arrayOffset(), s1Buffer.remaining());
-        ObjectParameterStrategy s2strategy = new HeapArrayStrategy(s2Buffer.arrayOffset(), s2Buffer.remaining());
-        ObjectParameterInfo o1info = ObjectParameterInfo.create(0, ObjectParameterInfo.ARRAY,
-                ObjectParameterInfo.BYTE, ObjectParameterInfo.IN | ObjectParameterInfo.NULTERMINATE);
-        ObjectParameterInfo o2info = ObjectParameterInfo.create(1, ObjectParameterInfo.ARRAY,
-                ObjectParameterInfo.BYTE, ObjectParameterInfo.IN | ObjectParameterInfo.NULTERMINATE);
-
-        long ret = invoker.invokeN2(ctx, function.getFunctionAddress(), 0, 0, 2,
-                s1Buffer.array(), s1strategy, o1info, s2Buffer.array(), s2strategy, o2info);
-        return ret != 0;
-    }
-
 }
