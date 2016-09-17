@@ -260,8 +260,7 @@ final class JffiUtils
     private static final class NativeInvocationHandler
             implements InvocationHandler
     {
-        private final ConcurrentMap<Method, MethodInvoker> invokers
-                = new ConcurrentHashMap<Method, MethodInvoker>();
+        private final ConcurrentMap<Method, MethodInvoker> invokers = new ConcurrentHashMap<>();
         private final Library library;
         private final InvokerType invokerType;
 
@@ -492,12 +491,12 @@ final class JffiUtils
             this.parameterTypes = parameterTypes;
         }
 
-        private static final boolean isFloat(Class c)
+        private static boolean isFloat(Class c)
         {
             return Float.class.isAssignableFrom(c) || float.class == c;
         }
 
-        private static final int i(Object value)
+        private static int i(Object value)
         {
             return value instanceof Float
                     ? Float.floatToRawIntBits(((Float) value).floatValue())
@@ -611,7 +610,7 @@ final class JffiUtils
             return convertResult(returnType, result);
         }
 
-        private static final long l(Object arg)
+        private static long l(Object arg)
         {
             if (arg instanceof Float) {
                 return Float.floatToRawIntBits(((Float) arg).floatValue());
@@ -646,7 +645,7 @@ final class JffiUtils
         {
             private final long address;
 
-            public MemoryHolder(long address)
+            MemoryHolder(long address)
             {
                 this.address = address;
             }
@@ -655,6 +654,7 @@ final class JffiUtils
             protected void finalize()
                     throws Throwable
             {
+                super.finalize();
                 MemoryIO.getInstance().freeMemory(address);
             }
         }
