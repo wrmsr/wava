@@ -15,6 +15,7 @@ package com.wrmsr.wava.clang.jffi;
 
 import org.junit.Test;
 
+//https://github.com/llvm-mirror/clang/commits/master/include/clang-c
 public class TestJffiCx
 {
 
@@ -49,7 +50,7 @@ public class TestJffiCx
     {
         String libraryName = "/Users/spinlock/src/llvm/clang/build/lib/libclang.dylib";
         JffiCxRuntime runtime = (JffiCxRuntime) JffiCxRuntime.create(libraryName);
-        libclang libclang = JffiUtils.loadLibrary(libraryName, libclang.class, JffiUtils.InvokerType.Default);
+        libclang libclang = JffiUtils.loadLibrary(libraryName, libclang.class);
         libclang.clang_getClangVersion();
     }
 }

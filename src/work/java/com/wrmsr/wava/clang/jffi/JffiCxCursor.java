@@ -22,8 +22,9 @@ import com.wrmsr.wava.clang.CxCursorKind;
 import static com.kenai.jffi.Array.newArray;
 import static com.kenai.jffi.Struct.newStruct;
 
-final class JffiCxCursor
-        extends BaseStruct
+@SuppressWarnings("WeakerAccess")
+public final class JffiCxCursor
+        extends JffiStruct
         implements CxCursor
 {
     static Struct STRUCT = newStruct(

@@ -16,8 +16,9 @@ package com.wrmsr.wava.clang.jffi;
 
 import com.wrmsr.wava.clang.CxTranslationUnit;
 
-public class JffiCxTranslationUnit
-        extends BasePointer
+@SuppressWarnings("WeakerAccess")
+public final class JffiCxTranslationUnit
+        extends JffiPointer
         implements CxTranslationUnit
 {
     private boolean isDisposed = false;

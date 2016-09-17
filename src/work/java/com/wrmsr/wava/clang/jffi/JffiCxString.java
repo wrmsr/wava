@@ -21,8 +21,9 @@ import com.wrmsr.wava.clang.CxString;
 import static com.google.common.base.Preconditions.checkState;
 import static com.kenai.jffi.Struct.newStruct;
 
-final class JffiCxString
-        extends BaseStruct
+@SuppressWarnings("WeakerAccess")
+public final class JffiCxString
+        extends JffiStruct
         implements CxString
 {
     static final Struct STRUCT = newStruct(

@@ -14,26 +14,18 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang.jffi;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 import static java.util.Objects.requireNonNull;
 
-abstract class BaseStruct
+abstract class JffiPointer
         implements AutoCloseable
 {
     final JffiCxRuntime runtime;
-    final byte[] struct;
+    final long address;
 
-    BaseStruct(JffiCxRuntime runtime, byte[] struct)
+    JffiPointer(JffiCxRuntime runtime, long address)
     {
         this.runtime = requireNonNull(runtime);
-        this.struct = requireNonNull(struct);
-    }
-
-    public ByteBuffer getByteBuffer()
-    {
-        return ByteBuffer.wrap(struct).order(ByteOrder.nativeOrder());
+        this.address = address;
     }
 
     @Override

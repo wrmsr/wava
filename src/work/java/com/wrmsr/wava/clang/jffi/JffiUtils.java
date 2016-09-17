@@ -17,12 +17,12 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
+import com.google.common.base.Throwables;
 import com.kenai.jffi.Closure;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
-import com.kenai.jffi.MemoryIO;
 import com.kenai.jffi.ObjectParameterStrategy;
 import com.kenai.jffi.Platform;
 import com.kenai.jffi.Type;
@@ -41,6 +41,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.common.base.Preconditions.checkState;
+
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/ClosureTest.java
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/NumberTest.java
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/InvokerTest.java
 final class JffiUtils
 {
     private JffiUtils()
@@ -184,7 +189,6 @@ final class JffiUtils
     static final class DirectStrategy
             extends ObjectParameterStrategy
     {
-
         DirectStrategy()
         {
             super(DIRECT);
@@ -215,12 +219,6 @@ final class JffiUtils
         }
     }
 
-    enum InvokerType
-    {
-        Default,
-        PointerArray
-    }
-
     /**
      * Creates a new InvocationHandler mapping methods in the <tt>interfaceClass</tt>
      * to functions in the native library.
@@ -231,7 +229,7 @@ final class JffiUtils
      * @return a new instance of <tt>interfaceClass</tt> that can be used to call
      * functions in the native library.
      */
-    static <T> T loadLibrary(String name, Class<T> interfaceClass, InvokerType invokerType)
+    static <T> T loadLibrary(String name, Class<T> interfaceClass)
     {
         Library lib = Library.getCachedInstance(name, Library.LAZY);
         if (lib == null) {
@@ -240,7 +238,7 @@ final class JffiUtils
         }
         return interfaceClass.cast(Proxy.newProxyInstance(interfaceClass.getClassLoader(),
                 new Class[] {interfaceClass},
-                new NativeInvocationHandler(lib, invokerType)));
+                new NativeInvocationHandler(lib)));
     }
 
     private static final class NativeInvocationHandler
@@ -248,12 +246,10 @@ final class JffiUtils
     {
         private final ConcurrentMap<Method, MethodInvoker> invokers = new ConcurrentHashMap<>();
         private final Library library;
-        private final InvokerType invokerType;
 
-        NativeInvocationHandler(Library library, InvokerType invokerType)
+        NativeInvocationHandler(Library library)
         {
             this.library = library;
-            this.invokerType = invokerType;
         }
 
         @Override
@@ -275,12 +271,12 @@ final class JffiUtils
             if (invoker != null) {
                 return invoker;
             }
-            invokers.put(method, invoker = createInvoker(library, method, invokerType));
+            invokers.put(method, invoker = createInvoker(library, method));
             return invoker;
         }
     }
 
-    private static MethodInvoker createInvoker(Library library, Method method, InvokerType invokerType)
+    private static MethodInvoker createInvoker(Library library, Method method)
     {
         Class returnType = method.getReturnType();
         Class[] parameterTypes = method.getParameterTypes();
@@ -295,14 +291,7 @@ final class JffiUtils
                     method.getName(), Library.getLastError()));
         }
         Function function = new Function(address, ffiReturnType, ffiParameterTypes);
-        switch (invokerType) {
-            case PointerArray:
-                return new PointerArrayMethodInvoker(library, function, returnType, parameterTypes);
-            case Default:
-                return new DefaultMethodInvoker(library, function, returnType, parameterTypes);
-            default:
-                throw new RuntimeException("Unsupported InvokerType: " + invokerType);
-        }
+        return new DefaultMethodInvoker(library, function, returnType, parameterTypes);
     }
 
     private static Type convertClassToFFI(Class type)
@@ -334,6 +323,14 @@ final class JffiUtils
         else if (Address.class.isAssignableFrom(type)) {
             return Type.POINTER;
         }
+        else if (JffiStruct.class.isAssignableFrom(type)) {
+            try {
+                return (Type) type.getDeclaredField("STRUCT").get(null);
+            }
+            catch (ReflectiveOperationException e) {
+                throw Throwables.propagate(e);
+            }
+        }
         else {
             throw new IllegalArgumentException("Unknown type: " + type);
         }
@@ -364,7 +361,8 @@ final class JffiUtils
         public Object invoke(Object[] args)
         {
             HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
-            for (int i = 0; i < args.length; ++i) {
+            checkState((parameterTypes.length == 0 && args == null) || (parameterTypes.length == args.length));
+            for (int i = 0; i < parameterTypes.length; ++i) {
                 if (parameterTypes[i] == byte.class || parameterTypes[i] == Byte.class) {
                     buffer.putByte(((Number) args[i]).intValue());
                 }
@@ -422,122 +420,10 @@ final class JffiUtils
             else if (Address.class.isAssignableFrom(returnType)) {
                 return new Address(invoker.invokeAddress(function, buffer));
             }
+            else if (JffiStruct.class.isAssignableFrom(returnType)) {
+                return invoker.invokeStruct(function, buffer);
+            }
             throw new RuntimeException("Unknown return type: " + returnType);
-        }
-    }
-
-    private static final class PointerArrayMethodInvoker
-            implements MethodInvoker
-    {
-        private static final MemoryIO Memory = MemoryIO.getInstance();
-
-        private final Library library;
-        private final Function function;
-        private final Class returnType;
-        private final Class[] parameterTypes;
-
-        PointerArrayMethodInvoker(Library library, Function function, Class returnType, Class[] parameterTypes)
-        {
-            this.library = library;
-            this.function = function;
-            this.returnType = returnType;
-            this.parameterTypes = parameterTypes;
-        }
-
-        private static final class MemoryHolder
-        {
-            private final long address;
-
-            MemoryHolder(long address)
-            {
-                this.address = address;
-            }
-
-            @Override
-            protected void finalize()
-                    throws Throwable
-            {
-                super.finalize();
-                MemoryIO.getInstance().freeMemory(address);
-            }
-        }
-
-        private long getNativeLongReturnValue(long address)
-        {
-            return Platform.getPlatform().longSize() == 32
-                    ? Memory.getInt(address) : Memory.getLong(address);
-        }
-
-        @Override
-        public Object invoke(Object[] args)
-        {
-            MemoryHolder[] memoryHolders = new MemoryHolder[function.getParameterCount()];
-            long[] parameterAddresses = new long[function.getParameterCount()];
-            for (int i = 0; i < parameterAddresses.length; ++i) {
-                // Allocate 8 bytes; enough to store long long and double
-                parameterAddresses[i] = Memory.allocateMemory(8, true);
-                memoryHolders[i] = new MemoryHolder(parameterAddresses[i]);
-            }
-
-            for (int i = 0; i < args.length; ++i) {
-                if (parameterTypes[i] == byte.class || parameterTypes[i] == Byte.class) {
-                    Memory.putByte(parameterAddresses[i], ((Number) args[i]).byteValue());
-                }
-                else if (parameterTypes[i] == short.class || parameterTypes[i] == Short.class) {
-                    Memory.putShort(parameterAddresses[i], ((Number) args[i]).shortValue());
-                }
-                else if (parameterTypes[i] == int.class || parameterTypes[i] == Integer.class) {
-                    Memory.putInt(parameterAddresses[i], ((Number) args[i]).intValue());
-                }
-                else if (parameterTypes[i] == long.class || parameterTypes[i] == Long.class) {
-                    Memory.putLong(parameterAddresses[i], ((Number) args[i]).longValue());
-                }
-                else if (parameterTypes[i] == float.class || parameterTypes[i] == Float.class) {
-                    Memory.putFloat(parameterAddresses[i], ((Number) args[i]).floatValue());
-                }
-                else if (parameterTypes[i] == double.class || parameterTypes[i] == Double.class) {
-                    Memory.putDouble(parameterAddresses[i], ((Number) args[i]).doubleValue());
-                }
-                else if (Address.class.isAssignableFrom(parameterTypes[i])) {
-                    Memory.putAddress(parameterAddresses[i], ((Address) args[i]).address);
-                }
-                else {
-                    throw new RuntimeException("Unknown parameter type: " + parameterTypes[i]);
-                }
-            }
-            long returnBuffer = Memory.allocateMemory(8, true);
-            try {
-                Invoker.getInstance().invoke(function, returnBuffer, parameterAddresses);
-
-                if (returnType == void.class || returnType == Void.class) {
-                    return null;
-                }
-                else if (returnType == byte.class || returnType == Byte.class) {
-                    return (byte) getNativeLongReturnValue(returnBuffer);
-                }
-                else if (returnType == short.class || returnType == Short.class) {
-                    return (short) getNativeLongReturnValue(returnBuffer);
-                }
-                else if (returnType == int.class || returnType == Integer.class) {
-                    return (int) getNativeLongReturnValue(returnBuffer);
-                }
-                else if (returnType == long.class || returnType == Long.class) {
-                    return Memory.getLong(returnBuffer);
-                }
-                else if (returnType == float.class || returnType == Float.class) {
-                    return Memory.getFloat(returnBuffer);
-                }
-                else if (returnType == double.class || returnType == Double.class) {
-                    return Memory.getDouble(returnBuffer);
-                }
-                else if (Address.class.isAssignableFrom(returnType)) {
-                    return new Address(Memory.getAddress(returnBuffer));
-                }
-                throw new RuntimeException("Unknown return type: " + returnType);
-            }
-            finally {
-                Memory.freeMemory(returnBuffer);
-            }
         }
     }
 }

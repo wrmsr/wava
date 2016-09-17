@@ -21,8 +21,9 @@ import com.wrmsr.wava.clang.CxTranslationUnitFlags;
 
 import java.util.Set;
 
-final class JffiCxIndex
-        extends BasePointer
+@SuppressWarnings("WeakerAccess")
+public final class JffiCxIndex
+        extends JffiPointer
         implements CxIndex
 {
     private boolean isDisposed = false;
