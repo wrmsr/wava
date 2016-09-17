@@ -14,7 +14,12 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang.jffi;
 
+import com.wrmsr.wava.clang.CxException;
 import com.wrmsr.wava.clang.CxIndex;
+import com.wrmsr.wava.clang.CxTranslationUnit;
+import com.wrmsr.wava.clang.CxTranslationUnitFlags;
+
+import java.util.Set;
 
 final class JffiCxIndex
         extends BasePointer
@@ -35,5 +40,13 @@ final class JffiCxIndex
             runtime.invokeVoid(runtime.clang_disposeIndex, ib -> ib.putAddress(address));
             isDisposed = true;
         }
+    }
+
+    @Override
+    public CxTranslationUnit parseTranslationUnit(String sourceFilename, String commandLineArgs, Set<CxTranslationUnitFlags> options)
+            throws CxException
+    {
+        runtime.memoryIO.
+        return null;
     }
 }

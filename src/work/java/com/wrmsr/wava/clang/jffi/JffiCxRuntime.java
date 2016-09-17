@@ -15,17 +15,23 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.google.common.base.Throwables;
+import com.kenai.jffi.CallContext;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
+import com.kenai.jffi.ObjectParameterInfo;
+import com.kenai.jffi.ObjectParameterStrategy;
 import com.kenai.jffi.Type;
 import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxRuntime;
 import com.wrmsr.wava.clang.CxString;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -45,6 +51,7 @@ public final class JffiCxRuntime
     final Function clang_createIndex;
     final Function clang_disposeIndex;
 
+    final Function clang_parseTranslationUnit2;
     final Function clang_disposeTranslationUnit;
 
     final Function clang_getCursorKind;
@@ -55,24 +62,76 @@ public final class JffiCxRuntime
         this.memoryIO = requireNonNull(memoryIO);
         this.library = requireNonNull(library);
 
-        clang_getCString = new Function(library.getSymbolAddress("clang_getCString"), Type.POINTER, JffiCxString.STRUCT);
-        clang_disposeString = new Function(library.getSymbolAddress("clang_disposeString"), Type.VOID, JffiCxString.STRUCT);
+        // CINDEX_LINKAGE const char *clang_getCString(CXString string);
+        clang_getCString = new Function(
+                library.getSymbolAddress("clang_getCString"),
+                Type.POINTER,
+                JffiCxString.STRUCT);
 
-        clang_getClangVersion = new Function(library.getSymbolAddress("clang_getClangVersion"), JffiCxString.STRUCT);
+        // CINDEX_LINKAGE void clang_disposeString(CXString string);
+        clang_disposeString = new Function(
+                library.getSymbolAddress("clang_disposeString"),
+                Type.VOID,
+                JffiCxString.STRUCT);
 
-        clang_createIndex = new Function(library.getSymbolAddress("clang_createIndex"), Type.POINTER, Type.SINT, Type.SINT);
-        clang_disposeIndex = new Function(library.getSymbolAddress("clang_disposeIndex"), Type.VOID, Type.POINTER);
+        // CINDEX_LINKAGE CXString clang_getClangVersion(void);
+        clang_getClangVersion = new Function(
+                library.getSymbolAddress("clang_getClangVersion"),
+                JffiCxString.STRUCT);
 
-        clang_disposeTranslationUnit = new Function(library.getSymbolAddress("clang_disposeTranslationUnit"), Type.VOID, Type.POINTER);
+        // CINDEX_LINKAGE CXIndex clang_createIndex(int excludeDeclarationsFromPCH,
+        //                                          int displayDiagnostics);
+        clang_createIndex = new Function(
+                library.getSymbolAddress("clang_createIndex"),
+                Type.POINTER,
+                Type.SINT,
+                Type.SINT);
 
-        clang_getCursorKind = new Function(library.getSymbolAddress("clang_getCursorKind"), Type.UINT, JffiCxCursor.STRUCT);
+        // CINDEX_LINKAGE void clang_disposeIndex(CXIndex index);
+        clang_disposeIndex = new Function(
+                library.getSymbolAddress("clang_disposeIndex"),
+                Type.VOID,
+                Type.POINTER);
+
+        // CINDEX_LINKAGE enum CXErrorCode
+        // clang_parseTranslationUnit2(CXIndex CIdx,
+        //                             const char *source_filename,
+        //                             const char *const *command_line_args,
+        //                             int num_command_line_args,
+        //                             struct CXUnsavedFile *unsaved_files,
+        //                             unsigned num_unsaved_files,
+        //                             unsigned options,
+        //                             CXTranslationUnit *out_TU);
+        clang_parseTranslationUnit2 = new Function(
+                library.getSymbolAddress("clang_parseTranslationUnit2"),
+                Type.UINT,
+                Type.POINTER,
+                Type.POINTER,
+                Type.POINTER,
+                Type.SINT,
+                Type.POINTER,
+                Type.UINT,
+                Type.UINT,
+                Type.POINTER);
+
+        // CINDEX_LINKAGE void clang_disposeTranslationUnit(CXTranslationUnit);
+        clang_disposeTranslationUnit = new Function(
+                library.getSymbolAddress("clang_disposeTranslationUnit"),
+                Type.VOID,
+                Type.POINTER);
+
+        // CINDEX_LINKAGE enum CXCursorKind clang_getCursorKind(CXCursor);
+        clang_getCursorKind = new Function(
+                library.getSymbolAddress("clang_getCursorKind"),
+                Type.UINT,
+                JffiCxCursor.STRUCT);
     }
 
     public static CxRuntime create(String libraryPath)
     {
         Invoker invoker = Invoker.getInstance();
         MemoryIO memory = MemoryIO.getCheckedInstance();
-        Library library = Libraries.openLibrary(libraryPath);
+        Library library = JffiUtils.openLibrary(libraryPath);
         return new JffiCxRuntime(invoker, memory, library);
     }
 
@@ -130,4 +189,30 @@ public final class JffiCxRuntime
         argPopulator.accept(ib);
         invoker.invokeInt(function, ib);
     }
+
+    int invokeInt(Function function, Consumer<HeapInvocationBuffer> argPopulator)
+    {
+        HeapInvocationBuffer ib = new HeapInvocationBuffer(function);
+        argPopulator.accept(ib);
+        return invoker.invokeInt(function, ib);
+    }
+
+    public static boolean string_equals(Invoker invoker, String s1, String s2) {
+        Function function = getFunction("string_equals", Type.SINT, Type.POINTER, Type.POINTER);
+        CallContext ctx = getContext(Type.SINT, Type.POINTER, Type.POINTER);
+        ByteBuffer s1Buffer = Charset.defaultCharset().encode(CharBuffer.wrap(s1));
+        ByteBuffer s2Buffer  = Charset.defaultCharset().encode(CharBuffer.wrap(s2));
+
+        ObjectParameterStrategy s1strategy = new HeapArrayStrategy(s1Buffer.arrayOffset(), s1Buffer.remaining());
+        ObjectParameterStrategy s2strategy = new HeapArrayStrategy(s2Buffer.arrayOffset(), s2Buffer.remaining());
+        ObjectParameterInfo o1info = ObjectParameterInfo.create(0, ObjectParameterInfo.ARRAY,
+                ObjectParameterInfo.BYTE, ObjectParameterInfo.IN | ObjectParameterInfo.NULTERMINATE);
+        ObjectParameterInfo o2info = ObjectParameterInfo.create(1, ObjectParameterInfo.ARRAY,
+                ObjectParameterInfo.BYTE, ObjectParameterInfo.IN | ObjectParameterInfo.NULTERMINATE);
+
+        long ret = invoker.invokeN2(ctx, function.getFunctionAddress(), 0, 0, 2,
+                s1Buffer.array(), s1strategy, o1info, s2Buffer.array(), s2strategy, o2info);
+        return ret != 0;
+    }
+
 }
