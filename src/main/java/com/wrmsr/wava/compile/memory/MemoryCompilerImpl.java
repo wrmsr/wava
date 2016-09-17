@@ -49,17 +49,27 @@ import java.util.Optional;
 
 import static com.google.common.collect.Sets.immutableEnumSet;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
+import static com.wrmsr.wava.util.function.Functions.memoize;
+import static java.util.Objects.requireNonNull;
 
 public final class MemoryCompilerImpl
         implements ModuleCompilationParticipant
 {
-    private final String encoded;
-    private final List<String> initialMemoryChunks;
+    private final Module module;
+
+    private final Runnable initializer = memoize(this::initialize);
+    private String encoded;
+    private List<String> initialMemoryChunks;
 
     private static final int CHUNK_SIZE = 16 * 1024;
 
     @Inject
     public MemoryCompilerImpl(Module module)
+    {
+        this.module = requireNonNull(module);
+    }
+
+    private void initialize()
     {
         List<Segment> segments = module.getMemory().getSegments();
         ByteBuffer buf = ByteBuffer.allocate((segments.size() * 8) + segments.stream().mapToInt(Segment::getLength).sum());
@@ -79,6 +89,8 @@ public final class MemoryCompilerImpl
     @Override
     public List<JDeclaration> createPreCtorDeclarations()
     {
+        initializer.run();
+
         return ImmutableList.of(
                 new JField(
                         immutableEnumSet(JAccess.PROTECTED, JAccess.FINAL),
@@ -101,6 +113,8 @@ public final class MemoryCompilerImpl
     @Override
     public List<JStatement> createCtorStatements()
     {
+        initializer.run();
+
         ImmutableList.Builder<JStatement> ctor = ImmutableList.builder();
 
         ctor.add(

@@ -1,3 +1,19 @@
+  # Rely on llvm-config.
+  set(CONFIG_OUTPUT)
+  # find_program(LLVM_CONFIG "llvm-config")
+  set(LLVM_CONFIG "/Users/spinlock/src/llvm/llvm/build/bin/llvm-config")
+
+
+
+
+
+
+
+
+
+
+
+
 wget -c https://ftp.heanet.ie/mirrors/gnu/binutils/binutils-2.26.tar.gz
 tar xvf binutils-2.26.tar.gz
 make BINUTILS=binutils-2.26 ARCH=amd64

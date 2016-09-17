@@ -97,4 +97,39 @@ public final class Functions
             flag.set(true);
         };
     }
+
+    public static <T> Supplier<T> memoize(Supplier<T> supplier)
+    {
+        Cell<T> value = Cell.of(null);
+        Cell<Boolean> flag = Cell.of(false);
+        return () -> {
+            if (!flag.get()) {
+                value.set(supplier.get());
+                flag.set(true);
+            }
+            return value.get();
+        };
+    }
+
+    public static <T> Consumer<T> memoize(Consumer<T> consumer)
+    {
+        Cell<Boolean> flag = Cell.of(false);
+        return (value) -> {
+            if (!flag.get()) {
+                consumer.accept(value);
+                flag.set(true);
+            }
+        };
+    }
+
+    public static Runnable memoize(Runnable runnable)
+    {
+        Cell<Boolean> flag = Cell.of(false);
+        return () -> {
+            if (!flag.get()) {
+                runnable.run();
+                flag.set(true);
+            }
+        };
+    }
 }
