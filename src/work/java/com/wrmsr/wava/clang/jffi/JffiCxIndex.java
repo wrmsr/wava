@@ -19,7 +19,6 @@ import com.wrmsr.wava.clang.CxException;
 import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxTranslationUnit;
 import com.wrmsr.wava.clang.CxTranslationUnitFlags;
-import com.wrmsr.wava.util.Cell;
 
 import java.util.List;
 import java.util.Set;
@@ -60,13 +59,13 @@ public final class JffiCxIndex
     public CxTranslationUnit parseTranslationUnit(String sourceFilename, List<String> commandLineArgs, Set<CxTranslationUnitFlags> options)
             throws CxException
     {
-        Cell<JffiCxTranslationUnit> out = Cell.of(null);
+        JffiCxTranslationUnit[] out = new JffiCxTranslationUnit[1];
         String[] commandLineArgsArray = commandLineArgs.stream().toArray(String[]::new);
         int optionsInt = options.stream().map(CxTranslationUnitFlags::getAsInt).reduce(0, (l, r) -> l | r);
         CxError error = runtime.getLibClang().clang_parseTranslationUnit2(this, sourceFilename, commandLineArgsArray, commandLineArgsArray.length, 0, 0, optionsInt, out);
         if (error != CxError.Success) {
             throw new CxException(error);
         }
-        return out.get();
+        return out[0];
     }
 }

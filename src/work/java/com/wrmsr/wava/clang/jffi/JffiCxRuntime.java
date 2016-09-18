@@ -22,7 +22,6 @@ import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxRuntime;
 import com.wrmsr.wava.clang.CxString;
 import com.wrmsr.wava.clang.CxTranslationUnit;
-import com.wrmsr.wava.util.Cell;
 
 public abstract class JffiCxRuntime
         implements CxRuntime
@@ -43,7 +42,7 @@ public abstract class JffiCxRuntime
 
         CxTranslationUnit clang_createTranslationUnit(CxIndex index, String astFilename);
 
-        CxError clang_parseTranslationUnit2(JffiCxIndex index, String sourceFilename, String[] commandLineArgs, int numCommandLineArgs, long unsavedFiles, int numUnsavedFiles, int options, Cell<JffiCxTranslationUnit> out);
+        CxError clang_parseTranslationUnit2(JffiCxIndex index, String sourceFilename, String[] commandLineArgs, int numCommandLineArgs, long unsavedFiles, int numUnsavedFiles, int options, JffiCxTranslationUnit[] out);
 
         void clang_disposeTranslationUnit(JffiCxTranslationUnit translationUnit);
     }

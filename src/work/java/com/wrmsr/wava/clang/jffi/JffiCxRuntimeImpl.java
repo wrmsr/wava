@@ -18,20 +18,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
+import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
-import com.kenai.jffi.ObjectParameterInfo;
-import com.kenai.jffi.ObjectParameterStrategy;
 import com.kenai.jffi.Type;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +41,6 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
-import static com.wrmsr.wava.util.function.Bind.bind;
 import static java.util.Objects.requireNonNull;
 
 final class JffiCxRuntimeImpl
@@ -118,7 +113,7 @@ final class JffiCxRuntimeImpl
 
         Type getType();
 
-        Object push(Object value, HeapInvocationBuffer buffer, Supplier<Object> next);
+        Object push(Object value, InvocationBuffer buffer, Supplier<Object> next);
 
         Object invoke(Function function, HeapInvocationBuffer buffer);
 
@@ -128,7 +123,7 @@ final class JffiCxRuntimeImpl
             @FunctionalInterface
             interface Pusher
             {
-                Object push(Object value, HeapInvocationBuffer buffer, Supplier<Object> next);
+                Object push(Object value, InvocationBuffer buffer, Supplier<Object> next);
             }
 
             private final Type type;
@@ -142,7 +137,7 @@ final class JffiCxRuntimeImpl
                 this.invoker = requireNonNull(invoker);
             }
 
-            Impl(Type type, BiConsumer<Object, HeapInvocationBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
+            Impl(Type type, BiConsumer<Object, InvocationBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
             {
                 this(
                         type,
@@ -160,7 +155,7 @@ final class JffiCxRuntimeImpl
             }
 
             @Override
-            public Object push(Object value, HeapInvocationBuffer buffer, Supplier<Object> next)
+            public Object push(Object value, InvocationBuffer buffer, Supplier<Object> next)
             {
                 return pusher.push(value, buffer, next);
             }
@@ -194,11 +189,18 @@ final class JffiCxRuntimeImpl
                         new TypeAdapter.Impl(
                                 Type.POINTER,
                                 (value, buffer, next) -> {
-                                    ByteBuffer sbuffer = Charset.defaultCharset().encode(CharBuffer.wrap((String) value));
-                                    ObjectParameterStrategy strategy = new JffiUtils.HeapArrayStrategy(sbuffer.arrayOffset(), sbuffer.remaining());
-                                    ObjectParameterInfo info = ObjectParameterInfo.create(0, ObjectParameterInfo.ARRAY, ObjectParameterInfo.BYTE, ObjectParameterInfo.IN | ObjectParameterInfo.NULTERMINATE);
-                                    buffer.putObject(sbuffer, strategy, info);
-                                    return next.get();
+                                    byte[] bytes = ((String) value).getBytes();
+                                    long address = memoryIO.allocateMemory(bytes.length + 1, false);
+                                    checkState(address != 0, "allocation failed");
+                                    try {
+                                        memoryIO.putByteArray(address, bytes, 0, bytes.length);
+                                        memoryIO.putByte(address + bytes.length, (byte) 0);
+                                        buffer.putAddress(address);
+                                        return next.get();
+                                    }
+                                    finally {
+                                        memoryIO.freeMemory(address);
+                                    }
                                 },
                                 (function, buffer) -> {
                                     long address = invoker.invokeAddress(function, buffer);
@@ -259,20 +261,17 @@ final class JffiCxRuntimeImpl
                         BigDecimal.class::isAssignableFrom,
                         new TypeAdapter.Impl(
                                 Type.LONGDOUBLE,
-                                (value, buffer) -> buffer.putLongDouble(BigDecimal.class.cast(value)),
+                                (value, buffer) -> ((HeapInvocationBuffer) buffer).putLongDouble(BigDecimal.class.cast(value)),
                                 invoker::invokeBigDecimal)));
 
         builder.add(
-                new TypeAdapter.Factory.Impl(
-                        String[].class::equals,
-                        new TypeAdapter.Impl(
-                                Type.POINTER,
-                                (value, buffer, next) -> {
-                                    return next.get();
-                                },
-                                (function, buffer) -> {
-                                    throw new UnsupportedOperationException();
-                                })));
+                cls -> {
+                    if (cls.isArray()) {
+                        TypeAdapter componentAdapter = getTypeAdapter(cls.getComponentType());
+                        return Optional.of()
+                    }
+                    return Optional.empty();
+                });
 
         builder.add(buildStructTypeAdapterFactory(JffiCxCursor.DESCRIPTOR));
         builder.add(buildPointerTypeAdapterFactory(JffiCxIndex.DESCRIPTOR));
@@ -286,40 +285,28 @@ final class JffiCxRuntimeImpl
 
     private TypeAdapter.Factory buildStructTypeAdapterFactory(JffiStruct.Descriptor<?> descriptor)
     {
-        return cls -> {
-            if (cls == descriptor.cls) {
-                return Optional.of(
-                        new TypeAdapter.Impl(
-                                descriptor.struct,
-                                (value, buffer) -> buffer.putStruct(((JffiStruct) value).struct, 0),
-                                (function, buffer) -> {
-                                    byte[] struct = invoker.invokeStruct(function, buffer);
-                                    return descriptor.constructor.apply(JffiCxRuntimeImpl.this, struct);
-                                }));
-            }
-            else {
-                return Optional.empty();
-            }
-        };
+        return new TypeAdapter.Factory.Impl(
+                descriptor.cls::equals,
+                new TypeAdapter.Impl(
+                        descriptor.struct,
+                        (value, buffer) -> buffer.putStruct(((JffiStruct) value).struct, 0),
+                        (function, buffer) -> {
+                            byte[] struct = invoker.invokeStruct(function, buffer);
+                            return descriptor.constructor.apply(JffiCxRuntimeImpl.this, struct);
+                        }));
     }
 
     private TypeAdapter.Factory buildPointerTypeAdapterFactory(JffiPointer.Descriptor<?> descriptor)
     {
-        return cls -> {
-            if (cls == descriptor.cls) {
-                return Optional.of(
-                        new TypeAdapter.Impl(
-                                Type.POINTER,
-                                (value, buffer) -> buffer.putAddress(((JffiPointer) value).address),
-                                (function, buffer) -> {
-                                    long address = invoker.invokeAddress(function, buffer);
-                                    return descriptor.constructor.apply(JffiCxRuntimeImpl.this, address);
-                                }));
-            }
-            else {
-                return Optional.empty();
-            }
-        };
+        return new TypeAdapter.Factory.Impl(
+                descriptor.cls::equals,
+                new TypeAdapter.Impl(
+                        Type.POINTER,
+                        (value, buffer) -> buffer.putAddress(((JffiPointer) value).address),
+                        (function, buffer) -> {
+                            long address = invoker.invokeAddress(function, buffer);
+                            return descriptor.constructor.apply(JffiCxRuntimeImpl.this, address);
+                        }));
     }
 
     @SuppressWarnings("unchecked")
