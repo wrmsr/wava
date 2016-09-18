@@ -52,7 +52,7 @@ public final class JffiCxIndex
     {
         Cell<JffiCxTranslationUnit> out = Cell.of(null);
         String[] commandLineArgsArray = commandLineArgs.stream().toArray(String[]::new);
-        int optionsInt = options.stream().map(CxTranslationUnitFlags::getValue).reduce(0, (l, r) -> l | r);
+        int optionsInt = options.stream().map(CxTranslationUnitFlags::getAsInt).reduce(0, (l, r) -> l | r);
         CxError error = runtime.getLibClang().clang_parseTranslationUnit2(this, sourceFilename, commandLineArgsArray, commandLineArgsArray.length, 0, 0, optionsInt, out);
         if (error != CxError.Success) {
             throw new CxException(error);

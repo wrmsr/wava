@@ -30,11 +30,13 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.IntSupplier;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -285,6 +287,29 @@ final class JffiCxRuntimeImpl
                             catch (ReflectiveOperationException e) {
                                 throw Throwables.propagate(e);
                             }
+                        });
+                return Optional.of(typeAdapter);
+            }
+            else {
+                return Optional.empty();
+            }
+        });
+
+        builder.add(cls -> {
+            if (Enum.class.isAssignableFrom(cls) && IntSupplier.class.isAssignableFrom(cls)) {
+                Map byValue;
+                try {
+                    byValue = (Map) cls.getDeclaredField("BY_VALUE").get(null);
+                }
+                catch (ReflectiveOperationException e) {
+                    throw Throwables.propagate(e);
+                }
+                TypeAdapter typeAdapter = new TypeAdapter.Impl(
+                        Type.SINT,
+                        (value, buffer) -> buffer.putInt(((IntSupplier) value).getAsInt()),
+                        (function, buffer) -> {
+                            int value = invoker.invokeInt(function, buffer);
+                            return requireNonNull(byValue.get(value));
                         });
                 return Optional.of(typeAdapter);
             }
