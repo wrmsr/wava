@@ -14,7 +14,7 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang.jffi;
 
-import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
@@ -35,8 +35,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 public final class JffiCxRuntime
@@ -63,69 +65,7 @@ public final class JffiCxRuntime
         this.memoryIO = requireNonNull(memoryIO);
         this.library = requireNonNull(library);
 
-        typeAdapters.add(
-                new TypeAdapter.Impl(
-                        ImmutableSet.of(byte.class, Byte.class)::contains,
-                        Type.VOID,
-                        (value, buffer) -> {
-                            throw new UnsupportedOperationException();
-                        },
-                        invoker::invokeInt));
-
-        typeAdapters.add(
-                new TypeAdapter.Impl(
-                        ImmutableSet.<Class>of(String.class)::contains,
-                        Type.POINTER,
-                        (value, buffer) -> {
-                            throw new UnsupportedOperationException();
-                        },
-                        (function, buffer) -> {
-                            long address = invoker.invokeAddress(function, buffer);
-                            byte[] bytes = memoryIO.getZeroTerminatedByteArray(address);
-                            return new String(bytes);
-                        }));
-
-        typeAdapters.add(
-                new TypeAdapter.Impl(
-                        ImmutableSet.of(byte.class, Byte.class)::contains,
-                        Type.SINT8,
-                        (value, buffer) -> buffer.putByte(((Number) value).intValue()),
-                        (function, buffer) -> Byte.valueOf((byte) invoker.invokeInt(function, buffer))));
-
-        typeAdapters.add(
-                new TypeAdapter.Impl(
-                        ImmutableSet.of(short.class, Short.class)::contains,
-                        Type.SINT16,
-                        (value, buffer) -> buffer.putShort(((Number) value).intValue()),
-                        (function, buffer) -> Short.valueOf((short) invoker.invokeInt(function, buffer))));
-
-        typeAdapters.add(
-                new TypeAdapter.Impl(
-                        ImmutableSet.of(int.class, Integer.class)::contains,
-                        Type.SINT32,
-                        (value, buffer) -> buffer.putInt(((Number) value).intValue()),
-                        (function, buffer) -> Integer.valueOf((int) invoker.invokeInt(function, buffer))));
-
-        typeAdapters.add(
-                new TypeAdapter.Impl(
-                        ImmutableSet.of(long.class, Long.class)::contains,
-                        Type.SINT64,
-                        (value, buffer) -> buffer.putLong(((Number) value).intValue()),
-                        (function, buffer) -> Long.valueOf((long) invoker.invokeLong(function, buffer))));
-
-        typeAdapters.add(
-                new TypeAdapter.Impl(
-                        ImmutableSet.of(float.class, Float.class)::contains,
-                        Type.FLOAT,
-                        (value, buffer) -> buffer.putFloat(((Number) value).floatValue()),
-                        (function, buffer) -> Float.valueOf((byte) invoker.invokeFloat(function, buffer))));
-
-        typeAdapters.add(
-                new TypeAdapter.Impl(
-                        ImmutableSet.of(double.class, Double.class)::contains,
-                        Type.DOUBLE,
-                        (value, buffer) -> buffer.putDouble(((Number) value).doubleValue()),
-                        (function, buffer) -> Double.valueOf((byte) invoker.invokeDouble(function, buffer))));
+        typeAdapters.addAll(buildDefaultTypeAdapters());
 
         libclang = LibraryInterface.class.cast(
                 Proxy.newProxyInstance(LibraryInterface.class.getClassLoader(),
@@ -145,42 +85,6 @@ public final class JffiCxRuntime
     public void close()
             throws Exception
     {
-    }
-
-    private final class NativeInvocationHandler
-            implements InvocationHandler
-    {
-        private final ConcurrentMap<Method, MethodInvoker> invokers = new ConcurrentHashMap<>();
-
-        @Override
-        public Object invoke(Object self, Method method, Object[] argArray)
-                throws Throwable
-        {
-            return getMethodInvoker(method).invoke(argArray);
-        }
-
-        private MethodInvoker getMethodInvoker(Method method)
-        {
-            MethodInvoker invoker = invokers.get(method);
-            if (invoker != null) {
-                return invoker;
-            }
-            Class returnType = method.getReturnType();
-            Class[] parameterTypes = method.getParameterTypes();
-            Type ffiReturnType = convertClassToFFI(returnType);
-            Type[] ffiParameterTypes = new Type[parameterTypes.length];
-            for (int i = 0; i < ffiParameterTypes.length; ++i) {
-                ffiParameterTypes[i] = convertClassToFFI(parameterTypes[i]);
-            }
-            final long address = library.getSymbolAddress(method.getName());
-            if (address == 0) {
-                throw new UnsatisfiedLinkError(String.format("Could not locate '%s': %s", method.getName(), Library.getLastError()));
-            }
-            Function function = new Function(address, ffiReturnType, ffiParameterTypes);
-            invoker = new DefaultMethodInvoker(function, returnType, parameterTypes);
-            invokers.put(method, invoker);
-            return invoker;
-        }
     }
 
     interface TypeAdapter
@@ -235,13 +139,156 @@ public final class JffiCxRuntime
         }
     }
 
+    private List<TypeAdapter> buildDefaultTypeAdapters()
+    {
+        ImmutableList.Builder<TypeAdapter> builder = ImmutableList.builder();
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(byte.class, Byte.class)::contains,
+                        Type.VOID,
+                        (value, buffer) -> {
+                            throw new UnsupportedOperationException();
+                        },
+                        invoker::invokeInt));
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.<Class>of(String.class)::contains,
+                        Type.POINTER,
+                        (value, buffer) -> {
+                            throw new UnsupportedOperationException();
+                        },
+                        (function, buffer) -> {
+                            long address = invoker.invokeAddress(function, buffer);
+                            byte[] bytes = memoryIO.getZeroTerminatedByteArray(address);
+                            return new String(bytes);
+                        }));
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(byte.class, Byte.class)::contains,
+                        Type.SINT8,
+                        (value, buffer) -> buffer.putByte(((Number) value).intValue()),
+                        (function, buffer) -> Byte.valueOf((byte) invoker.invokeInt(function, buffer))));
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(short.class, Short.class)::contains,
+                        Type.SINT16,
+                        (value, buffer) -> buffer.putShort(((Number) value).intValue()),
+                        (function, buffer) -> Short.valueOf((short) invoker.invokeInt(function, buffer))));
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(int.class, Integer.class)::contains,
+                        Type.SINT32,
+                        (value, buffer) -> buffer.putInt(((Number) value).intValue()),
+                        (function, buffer) -> Integer.valueOf((int) invoker.invokeInt(function, buffer))));
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(long.class, Long.class)::contains,
+                        Type.SINT64,
+                        (value, buffer) -> buffer.putLong(((Number) value).intValue()),
+                        (function, buffer) -> Long.valueOf((long) invoker.invokeLong(function, buffer))));
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(float.class, Float.class)::contains,
+                        Type.FLOAT,
+                        (value, buffer) -> buffer.putFloat(((Number) value).floatValue()),
+                        (function, buffer) -> Float.valueOf((byte) invoker.invokeFloat(function, buffer))));
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(double.class, Double.class)::contains,
+                        Type.DOUBLE,
+                        (value, buffer) -> buffer.putDouble(((Number) value).doubleValue()),
+                        (function, buffer) -> Double.valueOf((byte) invoker.invokeDouble(function, buffer))));
+
+        builder.add(
+                new TypeAdapter.Impl(
+                        BigDecimal.class::isAssignableFrom,
+                        Type.LONGDOUBLE,
+                        (value, buffer) -> buffer.putLongDouble(BigDecimal.class.cast(value)),
+                        invoker::invokeBigDecimal));
+
+        return builder.build();
+    }
+
+    private TypeAdapter getTypeAdapter(Class cls)
+    {
+        for (TypeAdapter typeAdapter : typeAdapters) {
+            if (typeAdapter.matchesClass(cls)) {
+                return typeAdapter;
+            }
+        }
+        throw new UnsupportedOperationException();
+    }
+
+    @FunctionalInterface
+    private interface MethodInvoker
+    {
+        Object invoke(Object[] args);
+    }
+
+    private final class NativeInvocationHandler
+            implements InvocationHandler
+    {
+        private final ConcurrentMap<Method, MethodInvoker> invokers = new ConcurrentHashMap<>();
+
+        @Override
+        public Object invoke(Object self, Method method, Object[] argArray)
+                throws Throwable
+        {
+            return getMethodInvoker(method).invoke(argArray);
+        }
+
+        private MethodInvoker getMethodInvoker(Method method)
+        {
+            MethodInvoker invoker = invokers.get(method);
+            if (invoker != null) {
+                return invoker;
+            }
+
+            TypeAdapter returnType = getTypeAdapter(method.getReturnType());
+            List<TypeAdapter> parameterTypes = Stream.of(method.getParameterTypes())
+                    .map(JffiCxRuntime.this::getTypeAdapter)
+                    .collect(toImmutableList());
+
+            final long address = library.getSymbolAddress(method.getName());
+            if (address == 0) {
+                throw new UnsatisfiedLinkError(String.format("Could not locate '%s': %s", method.getName(), Library.getLastError()));
+            }
+
+            Function function = new Function(
+                    address,
+                    returnType.getType(),
+                    parameterTypes.stream()
+                            .map(TypeAdapter::getType)
+                            .toArray(Type[]::new));
+
+            invoker = (args) -> {
+                HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
+                checkState((parameterTypes.size() == 0 && args == null) || (parameterTypes.size() == args.length));
+                for (int i = 0; i < parameterTypes.size(); ++i) {
+                    parameterTypes.get(i).push(args[i], buffer);
+                }
+                return returnType.invoke(function, buffer);
+            };
+
+            invokers.put(method, invoker);
+
+            return invoker;
+        }
+    }
+
+    /*
     private Type convertClassToFFI(Class type)
     {
         if (type == void.class || type == Void.class) {
             // ...
-        }
-        else if (BigDecimal.class.isAssignableFrom(type)) {
-            return Type.LONGDOUBLE;
         }
         else if (JffiUtils.Address.class.isAssignableFrom(type)) {
             return Type.POINTER;
@@ -259,62 +306,37 @@ public final class JffiCxRuntime
         }
     }
 
-    private interface MethodInvoker
+    @Override
+    public Object invoke(Object[] args)
     {
-        Object invoke(Object[] args);
-    }
-
-    private final class DefaultMethodInvoker
-            implements MethodInvoker
-    {
-        private final Function function;
-        private final Class returnType;
-        private final Class[] parameterTypes;
-
-        DefaultMethodInvoker(Function function, Class returnType, Class[] parameterTypes)
-        {
-            this.function = function;
-            this.returnType = returnType;
-            this.parameterTypes = parameterTypes;
-        }
-
-        @Override
-        public Object invoke(Object[] args)
-        {
-            HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
-            checkState((parameterTypes.length == 0 && args == null) || (parameterTypes.length == args.length));
-            for (int i = 0; i < parameterTypes.length; ++i) {
-                if (parameterTypes[i] == byte.class || parameterTypes[i] == Byte.class) {
-                    // ...
-                }
-                else if (BigDecimal.class.isAssignableFrom(parameterTypes[i])) {
-                    buffer.putLongDouble(BigDecimal.class.cast(args[i]));
-                }
-                else if (JffiUtils.Address.class.isAssignableFrom(parameterTypes[i])) {
-                    buffer.putAddress(((JffiUtils.Address) args[i]).address);
-                }
-                else {
-                    throw new RuntimeException("Unknown parameter type: " + parameterTypes[i]);
-                }
-            }
-            Invoker invoker = Invoker.getInstance();
-            if (returnType == void.class || returnType == Void.class) {
-                invoker.invokeInt(function, buffer);
-                return null;
-            }
-            else if (returnType == byte.class || returnType == Byte.class) {
+        HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
+        checkState((parameterTypes.length == 0 && args == null) || (parameterTypes.length == args.length));
+        for (int i = 0; i < parameterTypes.length; ++i) {
+            if (parameterTypes[i] == byte.class || parameterTypes[i] == Byte.class) {
                 // ...
             }
-            else if (BigDecimal.class.isAssignableFrom(returnType)) {
-                return invoker.invokeBigDecimal(function, buffer);
+            else if (JffiUtils.Address.class.isAssignableFrom(parameterTypes[i])) {
+                buffer.putAddress(((JffiUtils.Address) args[i]).address);
             }
-            else if (JffiUtils.Address.class.isAssignableFrom(returnType)) {
-                return new JffiUtils.Address(invoker.invokeAddress(function, buffer));
+            else {
+                throw new RuntimeException("Unknown parameter type: " + parameterTypes[i]);
             }
-            else if (JffiStruct.class.isAssignableFrom(returnType)) {
-                return invoker.invokeStruct(function, buffer);
-            }
-            throw new RuntimeException("Unknown return type: " + returnType);
         }
+        Invoker invoker = Invoker.getInstance();
+        if (returnType == void.class || returnType == Void.class) {
+            invoker.invokeInt(function, buffer);
+            return null;
+        }
+        else if (returnType == byte.class || returnType == Byte.class) {
+            // ...
+        }
+        else if (JffiUtils.Address.class.isAssignableFrom(returnType)) {
+            return new JffiUtils.Address(invoker.invokeAddress(function, buffer));
+        }
+        else if (JffiStruct.class.isAssignableFrom(returnType)) {
+            return invoker.invokeStruct(function, buffer);
+        }
+        throw new RuntimeException("Unknown return type: " + returnType);
     }
+    */
 }
