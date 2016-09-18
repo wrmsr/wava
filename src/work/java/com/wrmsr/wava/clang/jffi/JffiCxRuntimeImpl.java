@@ -130,13 +130,14 @@ final class JffiCxRuntimeImpl
             }
 
             private final Type type;
-            private boolean isPrimitivePush;
+            private final boolean isPrimitivePush; // WTB TCO :|
             private final Pusher pusher;
             private final BiFunction<Function, HeapInvocationBuffer, Object> invoker;
 
             Impl(Type type, boolean isPrimitivePush, Pusher pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
             {
                 this.type = requireNonNull(type);
+                this.isPrimitivePush = isPrimitivePush;
                 this.pusher = requireNonNull(pusher);
                 this.invoker = requireNonNull(invoker);
             }
