@@ -218,7 +218,7 @@ final class JffiCxRuntimeImpl
                         new TypeAdapter.Impl(
                                 Type.SINT32,
                                 (value, buffer) -> buffer.putInt(((Number) value).intValue()),
-                                (function, buffer) -> Integer.valueOf((int) invoker.invokeInt(function, buffer)))));
+                                (function, buffer) -> Integer.valueOf(invoker.invokeInt(function, buffer)))));
 
         builder.add(
                 new TypeAdapter.Factory.Impl(
@@ -226,7 +226,7 @@ final class JffiCxRuntimeImpl
                         new TypeAdapter.Impl(
                                 Type.SINT64,
                                 (value, buffer) -> buffer.putLong(((Number) value).intValue()),
-                                (function, buffer) -> Long.valueOf((long) invoker.invokeLong(function, buffer)))));
+                                (function, buffer) -> Long.valueOf(invoker.invokeLong(function, buffer)))));
 
         builder.add(
                 new TypeAdapter.Factory.Impl(
@@ -234,7 +234,7 @@ final class JffiCxRuntimeImpl
                         new TypeAdapter.Impl(
                                 Type.FLOAT,
                                 (value, buffer) -> buffer.putFloat(((Number) value).floatValue()),
-                                (function, buffer) -> Float.valueOf((byte) invoker.invokeFloat(function, buffer)))));
+                                (function, buffer) -> Float.valueOf(invoker.invokeFloat(function, buffer)))));
 
         builder.add(
                 new TypeAdapter.Factory.Impl(
@@ -242,7 +242,7 @@ final class JffiCxRuntimeImpl
                         new TypeAdapter.Impl(
                                 Type.DOUBLE,
                                 (value, buffer) -> buffer.putDouble(((Number) value).doubleValue()),
-                                (function, buffer) -> Double.valueOf((byte) invoker.invokeDouble(function, buffer)))));
+                                (function, buffer) -> Double.valueOf(invoker.invokeDouble(function, buffer)))));
 
         builder.add(
                 new TypeAdapter.Factory.Impl(
