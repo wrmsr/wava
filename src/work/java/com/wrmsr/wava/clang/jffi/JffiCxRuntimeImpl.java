@@ -23,10 +23,12 @@ import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
 import com.kenai.jffi.Type;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,8 +41,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.wrmsr.wava.clang.jffi.JffiUtils.ByteBufferParameterBuffer;
 import static com.wrmsr.wava.clang.jffi.JffiUtils.HeapInvocationBufferParameterBuffer;
 import static com.wrmsr.wava.clang.jffi.JffiUtils.ParameterBuffer;
+import static com.wrmsr.wava.util.Buffers.cleanBuffer;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
 import static com.wrmsr.wava.util.function.Bind.bind;
 import static java.util.Objects.requireNonNull;
@@ -203,17 +207,23 @@ final class JffiCxRuntimeImpl
                                 Type.POINTER,
                                 false,
                                 (value, buffer, next) -> {
-                                    byte[] bytes = ((String) value).getBytes();
-                                    long address = memoryIO.allocateMemory(bytes.length + 1, false);
-                                    checkState(address != 0, "allocation failed");
-                                    try {
-                                        memoryIO.putByteArray(address, bytes, 0, bytes.length);
-                                        memoryIO.putByte(address + bytes.length, (byte) 0);
-                                        buffer.putAddress(address);
+                                    if (value == null) {
+                                        buffer.putAddress(0);
                                         return next.get();
                                     }
-                                    finally {
-                                        memoryIO.freeMemory(address);
+                                    else {
+                                        byte[] bytes = ((String) value).getBytes();
+                                        long address = memoryIO.allocateMemory(bytes.length + 1, false);
+                                        checkState(address != 0, "allocation failed");
+                                        try {
+                                            memoryIO.putByteArray(address, bytes, 0, bytes.length);
+                                            memoryIO.putByte(address + bytes.length, (byte) 0);
+                                            buffer.putAddress(address);
+                                            return next.get();
+                                        }
+                                        finally {
+                                            memoryIO.freeMemory(address);
+                                        }
                                     }
                                 },
                                 (function, buffer) -> {
@@ -287,7 +297,24 @@ final class JffiCxRuntimeImpl
                                         Type.POINTER,
                                         false,
                                         (value, buffer, next) -> {
-                                            return next.get();
+                                            if (value == null) {
+                                                buffer.putAddress(0);
+                                                return next.get();
+                                            }
+                                            else {
+                                                int length = Array.getLength(value);
+                                                ByteBuffer byteBuffer = ByteBuffer.allocateDirect(componentAdapter.getType().size() * length);
+                                                try {
+                                                    ParameterBuffer parameterBuffer = new ByteBufferParameterBuffer(byteBuffer);
+                                                    for (int i = 0; i < length; ++i) {
+                                                        next = bind(componentAdapter::push, Array.get(value, i), parameterBuffer, next)::apply;
+                                                    }
+                                                    return next.get();
+                                                }
+                                                finally {
+                                                    cleanBuffer(byteBuffer);
+                                                }
+                                            }
                                         },
                                         (function, buffer) -> {
                                             throw new UnsupportedOperationException();
@@ -370,16 +397,6 @@ final class JffiCxRuntimeImpl
         Object invoke(Object[] args);
     }
 
-    private static Supplier<Object> composeParameterPush(List<TypeAdapter> types, Object[] values, ParameterBuffer buffer, Supplier supplier)
-    {
-        checkState((types.size() == 0 && values == null) || (types.size() == values.length));
-        for (int i = types.size() - 1; i >= 0; --i) {
-            TypeAdapter parameterType = types.get(i);
-            supplier = bind(parameterType::push, values[i], buffer, supplier)::apply;
-        }
-        return supplier;
-    }
-
     private final class NativeInvocationHandler
             implements InvocationHandler
     {
@@ -419,11 +436,14 @@ final class JffiCxRuntimeImpl
             invoker = args -> {
                 HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
                 ParameterBuffer parameterBuffer = new HeapInvocationBufferParameterBuffer(buffer);
-                Supplier<Object> supplier = composeParameterPush(
-                        parameterTypes,
-                        args,
-                        parameterBuffer,
-                        () -> returnType.invoke(function, buffer));
+
+                Supplier supplier = () -> returnType.invoke(function, buffer);
+                checkState((parameterTypes.size() == 0 && args == null) || (parameterTypes.size() == args.length));
+                for (int i = parameterTypes.size() - 1; i >= 0; --i) {
+                    TypeAdapter parameterType = parameterTypes.get(i);
+                    supplier = bind(parameterType::push, args[i], parameterBuffer, supplier)::apply;
+                }
+
                 return supplier.get();
             };
 
