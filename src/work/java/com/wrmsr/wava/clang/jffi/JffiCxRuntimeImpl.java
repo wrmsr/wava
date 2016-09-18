@@ -354,7 +354,14 @@ final class JffiCxRuntimeImpl
                 descriptor.cls::equals,
                 new TypeAdapter.Impl(
                         Type.POINTER,
-                        (value, buffer) -> buffer.putAddress(((JffiPointer) value).address),
+                        (value, buffer) -> {
+                            if (value == null) {
+                                buffer.putAddress(0);
+                            }
+                            else {
+                                buffer.putAddress(((JffiPointer) value).address);
+                            }
+                        },
                         (function, buffer) -> {
                             long address = invoker.invokeAddress(function, buffer);
                             return descriptor.constructor.apply(JffiCxRuntimeImpl.this, address);

@@ -235,10 +235,10 @@ final class JffiUtils
         public void putAddress(long value)
         {
             switch (ADDRESS_SIZE) {
-                case 4:
+                case 32:
                     byteBuffer.putInt((int) value);
                     break;
-                case 8:
+                case 64:
                     byteBuffer.putLong(value);
                     break;
                 default:
