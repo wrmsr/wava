@@ -16,7 +16,12 @@ package com.wrmsr.wava.clang.jffi;
 import com.wrmsr.wava.clang.CxString;
 import org.junit.Test;
 
-//https://github.com/llvm-mirror/clang/commits/master/include/clang-c
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/ClosureTest.java
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/NumberTest.java
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/InvokerTest.java
+
+// https://github.com/llvm-mirror/clang/commits/master/include/clang-c
+
 public class TestJffiCx
 {
 
@@ -37,13 +42,6 @@ public class TestJffiCx
 //                s1Buffer.array(), s1strategy, o1info, s2Buffer.array(), s2strategy, o2info);
 //        return ret != 0;
 //    }
-
-    public interface libclang
-    {
-        void clang_toggleCrashRecovery(int isEnabled);
-
-        JffiCxString clang_getClangVersion();
-    }
 
     @Test
     public void testStuff()

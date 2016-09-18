@@ -17,10 +17,8 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.kenai.jffi.Closure;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.ObjectParameterStrategy;
-import com.kenai.jffi.Platform;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,9 +28,6 @@ import java.io.InputStreamReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/ClosureTest.java
-// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/NumberTest.java
-// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/InvokerTest.java
 final class JffiUtils
 {
     private JffiUtils()
