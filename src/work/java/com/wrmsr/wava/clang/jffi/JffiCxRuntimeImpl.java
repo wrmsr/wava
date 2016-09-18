@@ -21,12 +21,17 @@ import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
+import com.kenai.jffi.ObjectParameterInfo;
+import com.kenai.jffi.ObjectParameterStrategy;
 import com.kenai.jffi.Type;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -189,7 +194,11 @@ final class JffiCxRuntimeImpl
                         new TypeAdapter.Impl(
                                 Type.POINTER,
                                 (value, buffer, next) -> {
-                                    throw new UnsupportedOperationException();
+                                    ByteBuffer sbuffer = Charset.defaultCharset().encode(CharBuffer.wrap((String) value));
+                                    ObjectParameterStrategy strategy = new JffiUtils.HeapArrayStrategy(sbuffer.arrayOffset(), sbuffer.remaining());
+                                    ObjectParameterInfo info = ObjectParameterInfo.create(0, ObjectParameterInfo.ARRAY, ObjectParameterInfo.BYTE, ObjectParameterInfo.IN | ObjectParameterInfo.NULTERMINATE);
+                                    buffer.putObject(sbuffer, strategy, info);
+                                    return next.get();
                                 },
                                 (function, buffer) -> {
                                     long address = invoker.invokeAddress(function, buffer);

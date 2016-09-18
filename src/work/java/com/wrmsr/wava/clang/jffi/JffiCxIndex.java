@@ -51,6 +51,12 @@ public final class JffiCxIndex
     }
 
     @Override
+    public CxTranslationUnit createTranslationUnit(String astFilename)
+    {
+        return runtime.getLibClang().clang_createTranslationUnit(this, astFilename);
+    }
+
+    @Override
     public CxTranslationUnit parseTranslationUnit(String sourceFilename, List<String> commandLineArgs, Set<CxTranslationUnitFlags> options)
             throws CxException
     {

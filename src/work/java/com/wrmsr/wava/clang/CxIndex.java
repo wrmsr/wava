@@ -20,6 +20,8 @@ import java.util.Set;
 public interface CxIndex
         extends AutoCloseable
 {
+    CxTranslationUnit createTranslationUnit(String astFilename);
+
     CxTranslationUnit parseTranslationUnit(String sourceFilename, List<String> commandLineArgs, Set<CxTranslationUnitFlags> options)
             throws CxException;
 }

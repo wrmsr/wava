@@ -13,7 +13,9 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
+import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxString;
+import com.wrmsr.wava.clang.CxTranslationUnit;
 import org.junit.Test;
 
 // https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/ClosureTest.java
@@ -51,6 +53,11 @@ public class TestJffiCx
         JffiCxRuntime runtime = JffiCxRuntime.create(libraryName);
         try (CxString ver = runtime.getClangVersion()) {
             System.out.println(ver.get());
+        }
+        try (CxIndex idx = runtime.createIndex(0, 0)) {
+            try (CxTranslationUnit tu = idx.createTranslationUnit("abcd")) {
+
+            }
         }
     }
 }
