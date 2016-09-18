@@ -17,31 +17,18 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.google.common.base.Throwables;
 import com.kenai.jffi.Closure;
-import com.kenai.jffi.Function;
-import com.kenai.jffi.HeapInvocationBuffer;
-import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.ObjectParameterStrategy;
 import com.kenai.jffi.Platform;
-import com.kenai.jffi.Type;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.math.BigDecimal;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.google.common.base.Preconditions.checkState;
 
 // https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/ClosureTest.java
 // https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/NumberTest.java
@@ -106,49 +93,6 @@ final class JffiUtils
         }
     }
 
-    static final class Address
-            extends Number
-    {
-        final int SIZE = Platform.getPlatform().addressSize();
-        final long MASK = Platform.getPlatform().addressMask();
-
-        final long address;
-
-        Address(long address)
-        {
-            this.address = address & MASK;
-        }
-
-        Address(Closure.Handle closure)
-        {
-            this(closure.getAddress());
-        }
-
-        @Override
-        public int intValue()
-        {
-            return (int) address;
-        }
-
-        @Override
-        public long longValue()
-        {
-            return address;
-        }
-
-        @Override
-        public float floatValue()
-        {
-            return (float) address;
-        }
-
-        @Override
-        public double doubleValue()
-        {
-            return (double) address;
-        }
-    }
-
     static final class HeapArrayStrategy
             extends ObjectParameterStrategy
     {
@@ -197,7 +141,7 @@ final class JffiUtils
         @Override
         public long address(Object parameter)
         {
-            return ((Address) parameter).address;
+            return ((JffiPointer) parameter).address;
         }
 
         @Override
@@ -217,27 +161,5 @@ final class JffiUtils
         {
             throw new IllegalStateException("not a heap object");
         }
-    }
-
-    /**
-     * Creates a new InvocationHandler mapping methods in the <tt>interfaceClass</tt>
-     * to functions in the native library.
-     *
-     * @param <T> the type of <tt>interfaceClass</tt>
-     * @param name the native library to load
-     * @param interfaceClass the interface that contains the native method description
-     * @return a new instance of <tt>interfaceClass</tt> that can be used to call
-     * functions in the native library.
-     */
-    static <T> T loadLibrary(String name, Class<T> interfaceClass)
-    {
-        Library lib = Library.getCachedInstance(name, Library.LAZY);
-        if (lib == null) {
-            throw new UnsatisfiedLinkError(String.format("Could not load '%s': %s",
-                    name, Library.getLastError()));
-        }
-        return interfaceClass.cast(Proxy.newProxyInstance(interfaceClass.getClassLoader(),
-                new Class[] {interfaceClass},
-                new NativeInvocationHandler(lib)));
     }
 }

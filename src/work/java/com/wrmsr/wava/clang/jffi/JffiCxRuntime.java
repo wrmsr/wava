@@ -30,6 +30,7 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
@@ -49,7 +50,7 @@ public final class JffiCxRuntime
     final Library library;
     final LibraryInterface libclang;
 
-    private final List<TypeAdapter> typeAdapters = new ArrayList<>();
+    private final List<TypeAdapter.Factory> typeAdapterFactories = new ArrayList<>();
 
     private interface LibraryInterface
     {
@@ -58,14 +59,13 @@ public final class JffiCxRuntime
         JffiCxString clang_getClangVersion();
     }
 
-    @SuppressWarnings("UnnecessaryBoxing")
     private JffiCxRuntime(Invoker invoker, MemoryIO memoryIO, Library library)
     {
         this.invoker = requireNonNull(invoker);
         this.memoryIO = requireNonNull(memoryIO);
         this.library = requireNonNull(library);
 
-        typeAdapters.addAll(buildDefaultTypeAdapters());
+        typeAdapterFactories.addAll(buildDefaultTypeAdapterFactories());
 
         libclang = LibraryInterface.class.cast(
                 Proxy.newProxyInstance(LibraryInterface.class.getClassLoader(),
@@ -89,7 +89,34 @@ public final class JffiCxRuntime
 
     interface TypeAdapter
     {
-        boolean matchesClass(Class cls);
+        interface Factory
+        {
+            Optional<TypeAdapter> create(Class cls);
+
+            final class Impl
+                    implements Factory
+            {
+                private final Predicate<Class> classPredicate;
+                private final TypeAdapter typeAdapter;
+
+                public Impl(Predicate<Class> classPredicate, TypeAdapter typeAdapter)
+                {
+                    this.classPredicate = classPredicate;
+                    this.typeAdapter = typeAdapter;
+                }
+
+                @Override
+                public Optional<TypeAdapter> create(Class cls)
+                {
+                    if (classPredicate.test(cls)) {
+                        return Optional.of(typeAdapter);
+                    }
+                    else {
+                        return Optional.empty();
+                    }
+                }
+            }
+        }
 
         Type getType();
 
@@ -100,23 +127,15 @@ public final class JffiCxRuntime
         final class Impl
                 implements TypeAdapter
         {
-            private final Predicate<Class> classMatcher;
             private final Type type;
             private final BiConsumer<Object, HeapInvocationBuffer> pusher;
             private final BiFunction<Function, HeapInvocationBuffer, Object> invoker;
 
-            private Impl(Predicate<Class> classMatcher, Type type, BiConsumer<Object, HeapInvocationBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
+            private Impl(Type type, BiConsumer<Object, HeapInvocationBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
             {
-                this.classMatcher = requireNonNull(classMatcher);
                 this.type = requireNonNull(type);
                 this.pusher = requireNonNull(pusher);
                 this.invoker = requireNonNull(invoker);
-            }
-
-            @Override
-            public boolean matchesClass(Class cls)
-            {
-                return classMatcher.test(cls);
             }
 
             @Override
@@ -139,89 +158,100 @@ public final class JffiCxRuntime
         }
     }
 
-    private List<TypeAdapter> buildDefaultTypeAdapters()
+    @SuppressWarnings("UnnecessaryBoxing")
+    private List<TypeAdapter.Factory> buildDefaultTypeAdapterFactories()
     {
-        ImmutableList.Builder<TypeAdapter> builder = ImmutableList.builder();
+        ImmutableList.Builder<TypeAdapter.Factory> builder = ImmutableList.builder();
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         ImmutableSet.of(byte.class, Byte.class)::contains,
-                        Type.VOID,
-                        (value, buffer) -> {
-                            throw new UnsupportedOperationException();
-                        },
-                        invoker::invokeInt));
+                        new TypeAdapter.Impl(
+                                Type.VOID,
+                                (value, buffer) -> {
+                                    throw new UnsupportedOperationException();
+                                },
+                                invoker::invokeInt)));
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         ImmutableSet.<Class>of(String.class)::contains,
-                        Type.POINTER,
-                        (value, buffer) -> {
-                            throw new UnsupportedOperationException();
-                        },
-                        (function, buffer) -> {
-                            long address = invoker.invokeAddress(function, buffer);
-                            byte[] bytes = memoryIO.getZeroTerminatedByteArray(address);
-                            return new String(bytes);
-                        }));
+                        new TypeAdapter.Impl(
+                                Type.POINTER,
+                                (value, buffer) -> {
+                                    throw new UnsupportedOperationException();
+                                },
+                                (function, buffer) -> {
+                                    long address = invoker.invokeAddress(function, buffer);
+                                    byte[] bytes = memoryIO.getZeroTerminatedByteArray(address);
+                                    return new String(bytes);
+                                })));
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         ImmutableSet.of(byte.class, Byte.class)::contains,
-                        Type.SINT8,
-                        (value, buffer) -> buffer.putByte(((Number) value).intValue()),
-                        (function, buffer) -> Byte.valueOf((byte) invoker.invokeInt(function, buffer))));
+                        new TypeAdapter.Impl(
+                                Type.SINT8,
+                                (value, buffer) -> buffer.putByte(((Number) value).intValue()),
+                                (function, buffer) -> Byte.valueOf((byte) invoker.invokeInt(function, buffer)))));
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         ImmutableSet.of(short.class, Short.class)::contains,
-                        Type.SINT16,
-                        (value, buffer) -> buffer.putShort(((Number) value).intValue()),
-                        (function, buffer) -> Short.valueOf((short) invoker.invokeInt(function, buffer))));
+                        new TypeAdapter.Impl(
+                                Type.SINT16,
+                                (value, buffer) -> buffer.putShort(((Number) value).intValue()),
+                                (function, buffer) -> Short.valueOf((short) invoker.invokeInt(function, buffer)))));
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         ImmutableSet.of(int.class, Integer.class)::contains,
-                        Type.SINT32,
-                        (value, buffer) -> buffer.putInt(((Number) value).intValue()),
-                        (function, buffer) -> Integer.valueOf((int) invoker.invokeInt(function, buffer))));
+                        new TypeAdapter.Impl(
+                                Type.SINT32,
+                                (value, buffer) -> buffer.putInt(((Number) value).intValue()),
+                                (function, buffer) -> Integer.valueOf((int) invoker.invokeInt(function, buffer)))));
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         ImmutableSet.of(long.class, Long.class)::contains,
-                        Type.SINT64,
-                        (value, buffer) -> buffer.putLong(((Number) value).intValue()),
-                        (function, buffer) -> Long.valueOf((long) invoker.invokeLong(function, buffer))));
+                        new TypeAdapter.Impl(
+                                Type.SINT64,
+                                (value, buffer) -> buffer.putLong(((Number) value).intValue()),
+                                (function, buffer) -> Long.valueOf((long) invoker.invokeLong(function, buffer)))));
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         ImmutableSet.of(float.class, Float.class)::contains,
-                        Type.FLOAT,
-                        (value, buffer) -> buffer.putFloat(((Number) value).floatValue()),
-                        (function, buffer) -> Float.valueOf((byte) invoker.invokeFloat(function, buffer))));
+                        new TypeAdapter.Impl(
+                                Type.FLOAT,
+                                (value, buffer) -> buffer.putFloat(((Number) value).floatValue()),
+                                (function, buffer) -> Float.valueOf((byte) invoker.invokeFloat(function, buffer)))));
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         ImmutableSet.of(double.class, Double.class)::contains,
-                        Type.DOUBLE,
-                        (value, buffer) -> buffer.putDouble(((Number) value).doubleValue()),
-                        (function, buffer) -> Double.valueOf((byte) invoker.invokeDouble(function, buffer))));
+                        new TypeAdapter.Impl(
+                                Type.DOUBLE,
+                                (value, buffer) -> buffer.putDouble(((Number) value).doubleValue()),
+                                (function, buffer) -> Double.valueOf((byte) invoker.invokeDouble(function, buffer)))));
 
         builder.add(
-                new TypeAdapter.Impl(
+                new TypeAdapter.Factory.Impl(
                         BigDecimal.class::isAssignableFrom,
-                        Type.LONGDOUBLE,
-                        (value, buffer) -> buffer.putLongDouble(BigDecimal.class.cast(value)),
-                        invoker::invokeBigDecimal));
+                        new TypeAdapter.Impl(
+                                Type.LONGDOUBLE,
+                                (value, buffer) -> buffer.putLongDouble(BigDecimal.class.cast(value)),
+                                invoker::invokeBigDecimal)));
 
         return builder.build();
     }
 
     private TypeAdapter getTypeAdapter(Class cls)
     {
-        for (TypeAdapter typeAdapter : typeAdapters) {
-            if (typeAdapter.matchesClass(cls)) {
-                return typeAdapter;
+        for (TypeAdapter.Factory typeAdapterFactory : typeAdapterFactories) {
+            Optional<TypeAdapter> typeAdapter = typeAdapterFactory.create(cls);
+            if (typeAdapter.isPresent()) {
+                return typeAdapter.get();
             }
         }
         throw new UnsupportedOperationException();
@@ -269,7 +299,7 @@ public final class JffiCxRuntime
                             .map(TypeAdapter::getType)
                             .toArray(Type[]::new));
 
-            invoker = (args) -> {
+            invoker = args -> {
                 HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
                 checkState((parameterTypes.size() == 0 && args == null) || (parameterTypes.size() == args.length));
                 for (int i = 0; i < parameterTypes.size(); ++i) {
