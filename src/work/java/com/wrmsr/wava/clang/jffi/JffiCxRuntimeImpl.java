@@ -76,7 +76,7 @@ final class JffiCxRuntimeImpl
     {
     }
 
-    interface TypeAdapter
+    private interface TypeAdapter
     {
         @FunctionalInterface
         interface Factory
@@ -89,7 +89,7 @@ final class JffiCxRuntimeImpl
                 private final Predicate<Class> classPredicate;
                 private final TypeAdapter typeAdapter;
 
-                public Impl(Predicate<Class> classPredicate, TypeAdapter typeAdapter)
+                Impl(Predicate<Class> classPredicate, TypeAdapter typeAdapter)
                 {
                     this.classPredicate = classPredicate;
                     this.typeAdapter = typeAdapter;
@@ -110,22 +110,39 @@ final class JffiCxRuntimeImpl
 
         Type getType();
 
-        void push(Object value, HeapInvocationBuffer buffer);
+        void push(Object value, HeapInvocationBuffer buffer, Runnable next);
 
         Object invoke(Function function, HeapInvocationBuffer buffer);
 
         final class Impl
                 implements TypeAdapter
         {
+            @FunctionalInterface
+            interface Pusher
+            {
+                void push(Object value, HeapInvocationBuffer buffer, Runnable next);
+            }
+
             private final Type type;
-            private final BiConsumer<Object, HeapInvocationBuffer> pusher;
+            private final Pusher pusher;
             private final BiFunction<Function, HeapInvocationBuffer, Object> invoker;
 
-            private Impl(Type type, BiConsumer<Object, HeapInvocationBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
+            private Impl(Type type, Pusher pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
             {
                 this.type = requireNonNull(type);
                 this.pusher = requireNonNull(pusher);
                 this.invoker = requireNonNull(invoker);
+            }
+
+            private Impl(Type type, BiConsumer<Object, HeapInvocationBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
+            {
+                this(
+                        type,
+                        (value, buffer, next) -> {
+                            pusher.accept(value, buffer);
+                            next.run();
+                        },
+                        invoker);
             }
 
             @Override
@@ -135,9 +152,9 @@ final class JffiCxRuntimeImpl
             }
 
             @Override
-            public void push(Object value, HeapInvocationBuffer buffer)
+            public void push(Object value, HeapInvocationBuffer buffer, Runnable next)
             {
-                pusher.accept(value, buffer);
+                pusher.push(value, buffer, next);
             }
 
             @Override
@@ -363,7 +380,7 @@ final class JffiCxRuntimeImpl
                 HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
                 checkState((parameterTypes.size() == 0 && args == null) || (parameterTypes.size() == args.length));
                 for (int i = 0; i < parameterTypes.size(); ++i) {
-                    parameterTypes.get(i).push(args[i], buffer);
+                    parameterTypes.get(i).push(args[i], buffer, () -> {});
                 }
                 return returnType.invoke(function, buffer);
             };
