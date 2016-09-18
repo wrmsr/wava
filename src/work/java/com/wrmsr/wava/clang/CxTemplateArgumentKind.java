@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -27,6 +28,7 @@ import static java.util.function.Function.identity;
  * element descriptions.
  */
 public enum CxTemplateArgumentKind
+        implements IntSupplier
 {
     Null(0),
     Type(1),
@@ -47,10 +49,11 @@ public enum CxTemplateArgumentKind
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxTemplateArgumentKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTemplateArgumentKind::getValue, identity()));
+    public static final Map<Integer, CxTemplateArgumentKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTemplateArgumentKind::getAsInt, identity()));
 }

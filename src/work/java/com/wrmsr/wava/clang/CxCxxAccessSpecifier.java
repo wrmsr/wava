@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -25,6 +26,7 @@ import static java.util.function.Function.identity;
  * cursor with kind CX_CXXBaseSpecifier.
  */
 public enum CxCxxAccessSpecifier
+        implements IntSupplier
 {
     InvalidAccessSpecifier(0),
     Public(1),
@@ -38,10 +40,11 @@ public enum CxCxxAccessSpecifier
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxCxxAccessSpecifier> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxCxxAccessSpecifier::getValue, identity()));
+    public static final Map<Integer, CxCxxAccessSpecifier> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxCxxAccessSpecifier::getAsInt, identity()));
 }

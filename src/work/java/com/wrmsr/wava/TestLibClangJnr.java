@@ -13,9 +13,12 @@
  */
 package com.wrmsr.wava;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxRuntime;
 import com.wrmsr.wava.clang.CxString;
+import com.wrmsr.wava.clang.CxTranslationUnit;
 import com.wrmsr.wava.clang.jffi.JffiCxRuntime;
 
 public class TestLibClangJnr
@@ -31,6 +34,9 @@ public class TestLibClangJnr
         }
         try (CxIndex idx = cxRuntime.createIndex(0, 0)) {
             System.out.println(idx);
+            try (CxTranslationUnit tu = idx.parseTranslationUnit("a.c", ImmutableList.of(), ImmutableSet.of())) {
+
+            }
         }
     }
 }

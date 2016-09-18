@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -24,6 +25,7 @@ import static java.util.function.Function.identity;
  * \brief Describes the calling convention of a function type
  */
 public enum CxCallingConv
+        implements IntSupplier
 {
     Default(0),
     C(1),
@@ -52,10 +54,11 @@ public enum CxCallingConv
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxCallingConv> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxCallingConv::getValue, identity()));
+    public static final Map<Integer, CxCallingConv> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxCallingConv::getAsInt, identity()));
 }

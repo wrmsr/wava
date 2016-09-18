@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -24,6 +25,7 @@ import static java.util.function.Function.identity;
  * \brief Describes the kind of entity that a cursor refers to.
  */
 public enum CxCursorKind
+        implements IntSupplier
 {
     /* Declarations */
     /**
@@ -1075,10 +1077,11 @@ public enum CxCursorKind
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxCursorKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxCursorKind::getValue, identity()));
+    public static final Map<Integer, CxCursorKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxCursorKind::getAsInt, identity()));
 }

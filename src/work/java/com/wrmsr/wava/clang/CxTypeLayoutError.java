@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -29,6 +30,7 @@ import static java.util.function.Function.identity;
  * a valid argument to sizeof, alignof or offsetof.
  */
 public enum CxTypeLayoutError
+        implements IntSupplier
 {
     /**
      * \brief Type is of kind CXType_Invalid.
@@ -58,10 +60,11 @@ public enum CxTypeLayoutError
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxTypeLayoutError> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTypeLayoutError::getValue, identity()));
+    public static final Map<Integer, CxTypeLayoutError> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTypeLayoutError::getAsInt, identity()));
 }

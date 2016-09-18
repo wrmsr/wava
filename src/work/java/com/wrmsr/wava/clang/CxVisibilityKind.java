@@ -15,12 +15,14 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
 import static java.util.function.Function.identity;
 
 public enum CxVisibilityKind
+        implements IntSupplier
 {
     /**
      * \brief This value indicates that no visibility information is available
@@ -48,10 +50,11 @@ public enum CxVisibilityKind
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxVisibilityKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxVisibilityKind::getValue, identity()));
+    public static final Map<Integer, CxVisibilityKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxVisibilityKind::getAsInt, identity()));
 }

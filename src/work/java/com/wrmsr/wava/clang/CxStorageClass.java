@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -25,6 +26,7 @@ import static java.util.function.Function.identity;
  * was added for the case that the passed cursor in not a declaration.
  */
 public enum CxStorageClass
+        implements IntSupplier
 {
     Invalid(0),
     None(1),
@@ -42,10 +44,11 @@ public enum CxStorageClass
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxStorageClass> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxStorageClass::getValue, identity()));
+    public static final Map<Integer, CxStorageClass> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxStorageClass::getAsInt, identity()));
 }

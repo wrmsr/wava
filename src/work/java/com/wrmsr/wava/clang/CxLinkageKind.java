@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -24,6 +25,7 @@ import static java.util.function.Function.identity;
  * \brief Describe the linkage of the entity referred to by a cursor.
  */
 public enum CxLinkageKind
+        implements IntSupplier
 {
     /**
      * \brief This value indicates that no linkage information is available
@@ -57,10 +59,11 @@ public enum CxLinkageKind
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxLinkageKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxLinkageKind::getValue, identity()));
+    public static final Map<Integer, CxLinkageKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxLinkageKind::getAsInt, identity()));
 }

@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -24,6 +25,7 @@ import static java.util.function.Function.identity;
  * \brief Describes the kind of type
  */
 public enum CxTypeKind
+        implements IntSupplier
 {
     /**
      * \brief Represents an invalid type (e.g., where no type is available).
@@ -104,11 +106,12 @@ public enum CxTypeKind
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxTypeKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTypeKind::getValue, identity()));
+    public static final Map<Integer, CxTypeKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTypeKind::getAsInt, identity()));
 }
 

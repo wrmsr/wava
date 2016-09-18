@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -27,6 +28,7 @@ import static java.util.function.Function.identity;
  * error codes, including not yet assigned non-zero values, indicate errors.
  */
 public enum CxError
+        implements IntSupplier
 {
     /**
      * \brief No error.
@@ -64,10 +66,11 @@ public enum CxError
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxError> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxError::getValue, identity()));
+    public static final Map<Integer, CxError> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxError::getAsInt, identity()));
 }

@@ -15,6 +15,7 @@
 package com.wrmsr.wava.clang;
 
 import java.util.Map;
+import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
@@ -28,6 +29,7 @@ import static java.util.function.Function.identity;
  * constructing the translation unit.
  */
 public enum CxTranslationUnitFlags
+        implements IntSupplier
 {
     /**
      * \brief Used to indicate that no special translation-unit options are
@@ -145,10 +147,11 @@ public enum CxTranslationUnitFlags
         this.value = value;
     }
 
-    public int getValue()
+    @Override
+    public int getAsInt()
     {
         return value;
     }
 
-    public static final Map<Integer, CxTranslationUnitFlags> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTranslationUnitFlags::getValue, identity()));
+    public static final Map<Integer, CxTranslationUnitFlags> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTranslationUnitFlags::getAsInt, identity()));
 }
