@@ -80,6 +80,7 @@ final class JffiCxRuntimeImpl
 
     interface TypeAdapter
     {
+        @FunctionalInterface
         interface Factory
         {
             Optional<TypeAdapter> create(Class cls);
@@ -234,55 +235,63 @@ final class JffiCxRuntimeImpl
                                 (value, buffer) -> buffer.putLongDouble(BigDecimal.class.cast(value)),
                                 invoker::invokeBigDecimal)));
 
-        builder.add(
-                new TypeAdapter.Factory()
-                {
-                    @Override
-                    public Optional<TypeAdapter> create(Class cls)
-                    {
-                        if (JffiStruct.class.isAssignableFrom(cls)) {
-                            Type type;
-                            Constructor ctor;
+        builder.add(cls -> {
+            if (JffiStruct.class.isAssignableFrom(cls)) {
+                Type type;
+                Constructor ctor;
+                try {
+                    type = (Type) cls.getDeclaredField("STRUCT").get(null);
+                    ctor = cls.getDeclaredConstructor(JffiCxRuntime.class, byte[].class);
+                }
+                catch (ReflectiveOperationException e) {
+                    throw Throwables.propagate(e);
+                }
+                TypeAdapter typeAdapter = new TypeAdapter.Impl(
+                        type,
+                        (value, buffer) -> buffer.putStruct(((JffiStruct) value).struct, 0),
+                        (function, buffer) -> {
+                            byte[] struct = invoker.invokeStruct(function, buffer);
                             try {
-                                type = (Type) cls.getDeclaredField("STRUCT").get(null);
-                                ctor = cls.getDeclaredConstructor(JffiCxRuntime.class, byte[].class);
+                                return ctor.newInstance(JffiCxRuntimeImpl.this, struct);
                             }
                             catch (ReflectiveOperationException e) {
                                 throw Throwables.propagate(e);
                             }
-                            return Optional.of(
-                                    new TypeAdapter()
-                                    {
-                                        @Override
-                                        public Type getType()
-                                        {
-                                            return type;
-                                        }
+                        });
+                return Optional.of(typeAdapter);
+            }
+            else {
+                return Optional.empty();
+            }
+        });
 
-                                        @Override
-                                        public void push(Object value, HeapInvocationBuffer buffer)
-                                        {
-                                            buffer.putStruct(((JffiStruct) value).struct, 0);
-                                        }
-
-                                        @Override
-                                        public Object invoke(Function function, HeapInvocationBuffer buffer)
-                                        {
-                                            byte[] struct = invoker.invokeStruct(function, buffer);
-                                            try {
-                                                return ctor.newInstance(JffiCxRuntimeImpl.this, struct);
-                                            }
-                                            catch (ReflectiveOperationException e) {
-                                                throw Throwables.propagate(e);
-                                            }
-                                        }
-                                    });
-                        }
-                        else {
-                            return Optional.empty();
-                        }
-                    }
-                });
+        builder.add(cls -> {
+            if (JffiPointer.class.isAssignableFrom(cls)) {
+                Constructor ctor;
+                try {
+                    ctor = cls.getDeclaredConstructor(JffiCxRuntime.class, long.class);
+                }
+                catch (ReflectiveOperationException e) {
+                    throw Throwables.propagate(e);
+                }
+                TypeAdapter typeAdapter = new TypeAdapter.Impl(
+                        Type.POINTER,
+                        (value, buffer) -> buffer.putAddress(((JffiPointer) value).address),
+                        (function, buffer) -> {
+                            long address = invoker.invokeAddress(function, buffer);
+                            try {
+                                return ctor.newInstance(JffiCxRuntimeImpl.this, address);
+                            }
+                            catch (ReflectiveOperationException e) {
+                                throw Throwables.propagate(e);
+                            }
+                        });
+                return Optional.of(typeAdapter);
+            }
+            else {
+                return Optional.empty();
+            }
+        });
 
         return builder.build();
     }

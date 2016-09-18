@@ -17,9 +17,11 @@ package com.wrmsr.wava.clang.jffi;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
+import com.wrmsr.wava.clang.CxError;
 import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxRuntime;
 import com.wrmsr.wava.clang.CxString;
+import com.wrmsr.wava.util.Cell;
 
 public abstract class JffiCxRuntime
         implements CxRuntime
@@ -34,7 +36,11 @@ public abstract class JffiCxRuntime
 
         JffiCxString clang_getClangVersion();
 
+        JffiCxIndex clang_createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics);
+
         void clang_disposeIndex(JffiCxIndex index);
+
+        CxError clang_parseTranslationUnit2(JffiCxIndex CIdx, String sourceFilename, String[] commandLineArgs, int numCommandLineArgs, long unsavedFiles, int numUnsavedFiles, int options, Cell<JffiCxTranslationUnit> out);
 
         void clang_disposeTranslationUnit(JffiCxTranslationUnit translationUnit);
     }
@@ -50,7 +56,7 @@ public abstract class JffiCxRuntime
     @Override
     public CxIndex createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics)
     {
-        throw new UnsupportedOperationException();
+        return getLibClang().clang_createIndex(excludeDeclarationsFromPCH, displayDiagnostics);
     }
 
     public static JffiCxRuntime create(String libraryPath)

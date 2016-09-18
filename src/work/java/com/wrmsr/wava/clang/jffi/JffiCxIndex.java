@@ -14,11 +14,14 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang.jffi;
 
+import com.wrmsr.wava.clang.CxError;
 import com.wrmsr.wava.clang.CxException;
 import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxTranslationUnit;
 import com.wrmsr.wava.clang.CxTranslationUnitFlags;
+import com.wrmsr.wava.util.Cell;
 
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("WeakerAccess")
@@ -44,9 +47,16 @@ public final class JffiCxIndex
     }
 
     @Override
-    public CxTranslationUnit parseTranslationUnit(String sourceFilename, String commandLineArgs, Set<CxTranslationUnitFlags> options)
+    public CxTranslationUnit parseTranslationUnit(String sourceFilename, List<String> commandLineArgs, Set<CxTranslationUnitFlags> options)
             throws CxException
     {
-        return null;
+        Cell<JffiCxTranslationUnit> out = Cell.of(null);
+        String[] commandLineArgsArray = commandLineArgs.stream().toArray(String[]::new);
+        int optionsInt = options.stream().map(CxTranslationUnitFlags::getValue).reduce(0, (l, r) -> l | r);
+        CxError error = runtime.getLibClang().clang_parseTranslationUnit2(this, sourceFilename, commandLineArgsArray, commandLineArgsArray.length, 0, 0, optionsInt, out);
+        if (error != CxError.Success) {
+            throw new CxException(error);
+        }
+        return out.get();
     }
 }

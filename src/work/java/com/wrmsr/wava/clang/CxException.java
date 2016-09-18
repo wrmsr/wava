@@ -40,6 +40,12 @@ public class CxException
         this.error = Optional.of(error);
     }
 
+    public CxException(CxError error)
+    {
+        super(null, null);
+        this.error = Optional.of(error);
+    }
+
     public CxException()
     {
         super(null, null);

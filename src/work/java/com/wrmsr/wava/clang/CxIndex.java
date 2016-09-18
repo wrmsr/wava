@@ -13,11 +13,12 @@
  */
 package com.wrmsr.wava.clang;
 
+import java.util.List;
 import java.util.Set;
 
 public interface CxIndex
         extends AutoCloseable
 {
-    CxTranslationUnit parseTranslationUnit(String sourceFilename, String commandLineArgs, Set<CxTranslationUnitFlags> options)
+    CxTranslationUnit parseTranslationUnit(String sourceFilename, List<String> commandLineArgs, Set<CxTranslationUnitFlags> options)
             throws CxException;
 }

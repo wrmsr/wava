@@ -69,12 +69,25 @@ TypeError: 'Cursor' object is not iterable
 
 In [17]: tu.cursor.kind
 Out[17]: CursorKind.TRANSLATION_UNIT
+
+
+echo '#include <fcntl.h>' | bin/clang -I/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include --target=wasm32 -dM -E -
+
+
+
+functions
+structs
+enums
+constants
+defines
 */
 
 import com.wrmsr.wava.util.process.FinalizedProcess;
 import com.wrmsr.wava.util.process.FinalizedProcessBuilder;
 import org.junit.Test;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 
 public class TestClangRecordParser
@@ -97,6 +110,21 @@ public class TestClangRecordParser
             process.getOutputStream().write("#include <fcntl.h>\n".getBytes("UTF-8"));
             process.getOutputStream().close();
             process.waitFor(10, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void testParsing()
+            throws Exception
+    {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("dump-record-layouts.txt")))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+                if (line.equals("*** Dumping AST Record Layout")) {
+
+                }
+            }
         }
     }
 }
