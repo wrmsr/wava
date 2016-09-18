@@ -13,7 +13,6 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenai.jffi.Function;
@@ -23,20 +22,17 @@ import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
 import com.kenai.jffi.Type;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.IntSupplier;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -242,28 +238,7 @@ final class JffiCxRuntimeImpl
         builder.add(buildStructTypeAdapterFactory(JffiCxString.DESCRIPTOR));
         builder.add(buildPointerTypeAdapterFactory(JffiCxTranslationUnit.DESCRIPTOR));
 
-        builder.add(cls -> {
-            if (Enum.class.isAssignableFrom(cls) && IntSupplier.class.isAssignableFrom(cls)) {
-                Map byValue;
-                try {
-                    byValue = (Map) cls.getDeclaredField("BY_VALUE").get(null);
-                }
-                catch (ReflectiveOperationException e) {
-                    throw Throwables.propagate(e);
-                }
-                TypeAdapter typeAdapter = new TypeAdapter.Impl(
-                        Type.SINT,
-                        (value, buffer) -> buffer.putInt(((IntSupplier) value).getAsInt()),
-                        (function, buffer) -> {
-                            int value = invoker.invokeInt(function, buffer);
-                            return requireNonNull(byValue.get(value));
-                        });
-                return Optional.of(typeAdapter);
-            }
-            else {
-                return Optional.empty();
-            }
-        });
+        JffiCxEnums.DESCRIPTORS.forEach(d -> builder.add(buildEnumTypeAdapterFactory(d)));
 
         return builder.build();
     }
@@ -272,14 +247,14 @@ final class JffiCxRuntimeImpl
     {
         return cls -> {
             if (cls == descriptor.cls) {
-                TypeAdapter typeAdapter = new TypeAdapter.Impl(
-                        descriptor.struct,
-                        (value, buffer) -> buffer.putStruct(((JffiStruct) value).struct, 0),
-                        (function, buffer) -> {
-                            byte[] struct = invoker.invokeStruct(function, buffer);
-                            return descriptor.constructor.apply(JffiCxRuntimeImpl.this, struct);
-                        });
-                return Optional.of(typeAdapter);
+                return Optional.of(
+                        new TypeAdapter.Impl(
+                                descriptor.struct,
+                                (value, buffer) -> buffer.putStruct(((JffiStruct) value).struct, 0),
+                                (function, buffer) -> {
+                                    byte[] struct = invoker.invokeStruct(function, buffer);
+                                    return descriptor.constructor.apply(JffiCxRuntimeImpl.this, struct);
+                                }));
             }
             else {
                 return Optional.empty();
@@ -291,14 +266,39 @@ final class JffiCxRuntimeImpl
     {
         return cls -> {
             if (cls == descriptor.cls) {
-                TypeAdapter typeAdapter = new TypeAdapter.Impl(
-                        Type.POINTER,
-                        (value, buffer) -> buffer.putAddress(((JffiPointer) value).address),
-                        (function, buffer) -> {
-                            long address = invoker.invokeAddress(function, buffer);
-                            return descriptor.constructor.apply(JffiCxRuntimeImpl.this, address);
-                        });
-                return Optional.of(typeAdapter);
+                return Optional.of(
+                        new TypeAdapter.Impl(
+                                Type.POINTER,
+                                (value, buffer) -> buffer.putAddress(((JffiPointer) value).address),
+                                (function, buffer) -> {
+                                    long address = invoker.invokeAddress(function, buffer);
+                                    return descriptor.constructor.apply(JffiCxRuntimeImpl.this, address);
+                                }));
+            }
+            else {
+                return Optional.empty();
+            }
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Enum<T>> T forceCastEnum(Object obj)
+    {
+        return (T) obj;
+    }
+
+    private TypeAdapter.Factory buildEnumTypeAdapterFactory(JffiCxEnums.Descriptor<?> descriptor)
+    {
+        return cls -> {
+            if (cls == descriptor.cls) {
+                return Optional.of(
+                        new TypeAdapter.Impl(
+                                Type.SINT,
+                                (value, buffer) -> buffer.putInt(descriptor.toInt.apply(forceCastEnum(value))),
+                                (function, buffer) -> {
+                                    int value = invoker.invokeInt(function, buffer);
+                                    return requireNonNull(descriptor.fromInt.apply(value));
+                                }));
             }
             else {
                 return Optional.empty();

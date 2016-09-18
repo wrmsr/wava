@@ -15,10 +15,19 @@ package com.wrmsr.wava.clang.jffi;
 
 import com.google.common.collect.ImmutableList;
 import com.wrmsr.wava.clang.CxCallingConv;
+import com.wrmsr.wava.clang.CxCursorKind;
+import com.wrmsr.wava.clang.CxCxxAccessSpecifier;
+import com.wrmsr.wava.clang.CxError;
+import com.wrmsr.wava.clang.CxLinkageKind;
+import com.wrmsr.wava.clang.CxStorageClass;
+import com.wrmsr.wava.clang.CxTemplateArgumentKind;
+import com.wrmsr.wava.clang.CxTranslationUnitFlags;
+import com.wrmsr.wava.clang.CxTypeKind;
+import com.wrmsr.wava.clang.CxTypeLayoutError;
+import com.wrmsr.wava.clang.CxVisibilityKind;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.IntSupplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,17 +40,72 @@ final class JffiCxEnums
     static final class Descriptor<T extends Enum<T>>
     {
         final Class<T> cls;
-        final Function<Integer, T> lookup;
+        final Function<T, Integer> toInt;
+        final Function<Integer, T> fromInt;
 
-        public Descriptor(Class<T> cls, Function<Integer, T> lookup)
+        public Descriptor(Class<T> cls, Function<T, Integer> toInt, Function<Integer, T> fromInt)
         {
             this.cls = requireNonNull(cls);
-            this.lookup = requireNonNull(lookup);
+            this.toInt = requireNonNull(toInt);
+            this.fromInt = requireNonNull(fromInt);
         }
     }
 
-    static final List<Descriptor<?>> DESCRIPTORS = ImmutableList.builder()
+    static final List<Descriptor<?>> DESCRIPTORS = ImmutableList.<Descriptor<?>>builder()
             .add(
-                    new Descriptor<CxCallingConv>(CxCallingConv.class, CxCallingConv.BY_VALUE::new)
-            )
+                    new Descriptor<>(
+                            CxCallingConv.class,
+                            CxCallingConv::getAsInt,
+                            CxCallingConv.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxCursorKind.class,
+                            CxCursorKind::getAsInt,
+                            CxCursorKind.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxCxxAccessSpecifier.class,
+                            CxCxxAccessSpecifier::getAsInt,
+                            CxCxxAccessSpecifier.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxError.class,
+                            CxError::getAsInt,
+                            CxError.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxLinkageKind.class,
+                            CxLinkageKind::getAsInt,
+                            CxLinkageKind.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxStorageClass.class,
+                            CxStorageClass::getAsInt,
+                            CxStorageClass.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxTemplateArgumentKind.class,
+                            CxTemplateArgumentKind::getAsInt,
+                            CxTemplateArgumentKind.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxTranslationUnitFlags.class,
+                            CxTranslationUnitFlags::getAsInt,
+                            CxTranslationUnitFlags.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxTypeKind.class,
+                            CxTypeKind::getAsInt,
+                            CxTypeKind.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxTypeLayoutError.class,
+                            CxTypeLayoutError::getAsInt,
+                            CxTypeLayoutError.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxVisibilityKind.class,
+                            CxVisibilityKind::getAsInt,
+                            CxVisibilityKind.BY_VALUE::get))
+            .build();
 }

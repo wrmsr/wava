@@ -29,7 +29,9 @@ public final class JffiCxIndex
         extends JffiPointer
         implements CxIndex
 {
-    static final Descriptor<JffiCxIndex> DESCRIPTOR = new Descriptor<>(JffiCxIndex::new);
+    static final Descriptor<JffiCxIndex> DESCRIPTOR = new Descriptor<>(
+            JffiCxIndex.class,
+            JffiCxIndex::new);
 
     private boolean isDisposed = false;
 

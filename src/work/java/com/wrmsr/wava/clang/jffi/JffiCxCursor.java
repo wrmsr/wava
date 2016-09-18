@@ -27,6 +27,7 @@ public final class JffiCxCursor
         implements CxCursor
 {
     static final Descriptor<JffiCxCursor> DESCRIPTOR = new Descriptor<>(
+            JffiCxCursor.class,
             JffiCxCursor::new,
             newStruct(
                     Type.UINT32,

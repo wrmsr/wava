@@ -26,6 +26,7 @@ public final class JffiCxString
         implements CxString
 {
     static final Descriptor<JffiCxString> DESCRIPTOR = new Descriptor<>(
+            JffiCxString.class,
             JffiCxString::new,
             newStruct(
                     Type.POINTER,

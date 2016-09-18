@@ -199,9 +199,9 @@ public enum CxCursorKind
     FirstRef(40),
 
     /* Decl references */
-    ObjCSuperClassRef(40),
-    ObjCProtocolRef(41),
-    ObjCClassRef(42),
+    // ObjCSuperClassRef(40),
+    // ObjCProtocolRef(41),
+    // ObjCClassRef(42),
 
     /**
      * \brief A reference to a type declaration.
@@ -298,7 +298,7 @@ public enum CxCursorKind
     // LastRef = CXCursor_VariableRef,
 
     /* Error conditions */
-    FirstInvalid(70),
+    // FirstInvalid(70),
     InvalidFile(70),
     NoDeclFound(71),
     NotImplemented(72),
@@ -306,7 +306,7 @@ public enum CxCursorKind
     // LastInvalid = CXCursor_InvalidCode,
 
     /* Expressions */
-    FirstExpr(100),
+    // FirstExpr(100),
 
     /**
      * \brief An expression whose specific kind is not exposed via this
@@ -622,7 +622,7 @@ public enum CxCursorKind
     // LastExpr = CXCursor_ObjCAvailabilityCheckExpr,
 
     /* Statements */
-    FirstStmt(200),
+    // FirstStmt(200),
     /**
      * \brief A statement whose specific kind is not exposed via this
      * interface.
@@ -1015,7 +1015,7 @@ public enum CxCursorKind
     TranslationUnit(300),
 
     /* Attributes */
-    FirstAttr(400),
+    // FirstAttr(400),
     /**
      * \brief An attribute whose specific kind is not exposed via this
      * interface.
