@@ -61,23 +61,23 @@ public final class Buffers
         }
     }
 
-    private static final Field directBufferBase;
+    private static final Field bufferAddress;
 
     static {
-        Field directByteBufferBaseX = null;
+        Field bufferAddressX = null;
         try {
-            directByteBufferBaseX = Class.forName("java.nio.DirectByteBuffer").getDeclaredField("base");
-            directByteBufferBaseX.setAccessible(true);
+            bufferAddressX = Class.forName("java.nio.Buffer").getDeclaredField("address");
+            bufferAddressX.setAccessible(true);
         }
         catch (ReflectiveOperationException e) {
         }
-        directBufferBase = directByteBufferBaseX;
+        bufferAddress = bufferAddressX;
     }
 
-    public static long getBufferBase(ByteBuffer buffer)
+    public static long getBufferAddress(ByteBuffer buffer)
     {
         try {
-            return (long) directBufferBase.get(buffer);
+            return (long) bufferAddress.get(buffer);
         }
         catch (ReflectiveOperationException e) {
             throw Throwables.propagate(e);

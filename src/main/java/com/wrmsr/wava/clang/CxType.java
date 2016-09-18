@@ -12,33 +12,9 @@
 |* Clang C++ API.                                                             *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
-package com.wrmsr.wava.clang.jffi;
+package com.wrmsr.wava.clang;
 
-import com.wrmsr.wava.clang.CxTranslationUnit;
-
-@SuppressWarnings("WeakerAccess")
-public final class JffiCxTranslationUnit
-        extends JffiPointer
-        implements CxTranslationUnit
+public interface CxType
 {
-    static final Descriptor<JffiCxTranslationUnit> DESCRIPTOR = new Descriptor<>(
-            JffiCxTranslationUnit.class,
-            JffiCxTranslationUnit::new);
-
-    private boolean isDisposed = false;
-
-    JffiCxTranslationUnit(JffiCxRuntime runtime, long address)
-    {
-        super(runtime, address);
-    }
-
-    @Override
-    public void close()
-            throws Exception
-    {
-        if (!isDisposed) {
-            runtime.getLibClang().clang_disposeTranslationUnit(this);
-            isDisposed = true;
-        }
-    }
+    String getSpelling();
 }

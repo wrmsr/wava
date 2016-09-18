@@ -15,11 +15,19 @@ package com.wrmsr.wava;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.wrmsr.wava.clang.CxChildVisitResult;
+import com.wrmsr.wava.clang.CxCursor;
 import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxRuntime;
-import com.wrmsr.wava.clang.CxString;
 import com.wrmsr.wava.clang.CxTranslationUnit;
 import com.wrmsr.wava.clang.jffi.JffiCxRuntime;
+import com.wrmsr.wava.util.POSIXUtils;
+
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/ClosureTest.java
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/NumberTest.java
+// https://github.com/jnr/jffi/blob/master/src/test/java/com/kenai/jffi/InvokerTest.java
+// process handle SIGPIPE SIGBUS SIGSEGV -n true -p true -s false
+// https://github.com/llvm-mirror/clang/commits/master/include/clang-c
 
 public class TestLibClangJnr
 {
@@ -28,14 +36,31 @@ public class TestLibClangJnr
     public static void main(String[] args)
             throws Throwable
     {
-        CxRuntime cxRuntime = JffiCxRuntime.create("/Users/spinlock/src/llvm/clang/build/lib/libclang.dylib");
-        try (CxString ver = cxRuntime.getClangVersion()) {
-            System.out.println(ver.get());
-        }
+        int pid = POSIXUtils.getPOSIX().getpid();
+        System.out.println(pid);
+
+        String libraryPath = "/Users/spinlock/src/llvm/clang/build/lib/libclang.dylib";
+        libraryPath = "/Users/spinlock/Library/Caches/CLion2016.2/cmake/generated/clang-4a32f2f0/4a32f2f0/Debug/lib/libclang.dylib";
+
+        CxRuntime cxRuntime = JffiCxRuntime.create(libraryPath);
+        System.out.println(cxRuntime.getClangVersion());
         try (CxIndex idx = cxRuntime.createIndex(0, 0)) {
             System.out.println(idx);
-            try (CxTranslationUnit tu = idx.parseTranslationUnit("a.c", ImmutableList.of(), ImmutableSet.of())) {
+            try (CxTranslationUnit tu = idx.parseTranslationUnit(
+                    "/Users/spinlock/a.c",
+                    ImmutableList.of("-I/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include", "--target=wasm32"),
+                    ImmutableSet.of())) {
+                System.out.println(tu);
+                CxCursor cursor = tu.getCursor();
+                System.out.println(cursor);
+                System.out.println(cursor.getKind());
 
+                cursor.visitChildren((cur, parent) -> {
+                    System.out.println(cur.getKind());
+                    System.out.println(cur.getSpelling());
+                    System.out.println(cur.getType().getSpelling());
+                    return CxChildVisitResult.Continue;
+                });
             }
         }
     }

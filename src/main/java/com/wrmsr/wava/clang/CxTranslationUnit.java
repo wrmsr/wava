@@ -14,8 +14,8 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang;
 
-public interface CxCursor
+public interface CxTranslationUnit
         extends AutoCloseable
 {
-    CxCursorKind getKind();
+    CxCursor getCursor();
 }

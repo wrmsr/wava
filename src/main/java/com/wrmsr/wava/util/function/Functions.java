@@ -29,6 +29,12 @@ public final class Functions
     {
     }
 
+    public static Runnable nop()
+    {
+        return () -> {
+        };
+    }
+
     public static <R> Supplier<R> konst(R ret)
     {
         return () -> ret;

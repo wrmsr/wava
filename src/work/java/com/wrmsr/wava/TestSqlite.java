@@ -658,9 +658,9 @@ public class TestSqlite
 
         int error = ppDb - 1024;
         int sql = error - 1024;
-//        writeString(sql, "select 1 'hi', 2 'bye', 1 + 2 'what', 1 'ugh', 'why' 'sql', (123.456 + 30.0001) 'f', ('hi' || 'there') 'asdf';");
+        writeString(sql, "select 1 'hi', 2 'bye', 1 + 2 'what', 1 'ugh', 'why' 'sql', (123.456 + 30.0001) 'f', ('hi' || 'there') 'asdf';");
 //        writeString(sql, "select * from ints;");
-        writeString(sql, "SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name;");
+//        writeString(sql, "SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name;");
 //        ret = sqlite3.sqlite3_exec(db, sql, 0, 0, error);
 //        System.out.println(ret);
 

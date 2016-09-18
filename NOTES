@@ -31,6 +31,8 @@ https://news.ycombinator.com/item?id=9457133
 https://github.com/bedatadriven/renjin/tree/master/tools/gcc-bridge
 https://github.com/neelance/ffi_gen
 
+https://github.com/vmt/udis86
+
 should prob just use javax.lang.model now
 https://blogs.oracle.com/darcy/entry/unsigned_api
 

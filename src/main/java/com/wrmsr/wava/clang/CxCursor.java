@@ -14,10 +14,35 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang;
 
-public interface CxRuntime
-        extends AutoCloseable
-{
-    CxString getClangVersion();
+import java.math.BigInteger;
 
-    CxIndex createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics);
+public interface CxCursor
+{
+    boolean cursorEqual(CxCursor other);
+
+    boolean cursorIsNull();
+
+    int cursorHash();
+
+    CxCursorKind getKind();
+
+    boolean visitChildren(CxCursorVisitor visitor);
+
+    String getSpelling();
+
+    CxType getType();
+
+    CxType getTypedefDeclUnderlyingType();
+
+    CxType getEnumDeclIntegerType();
+
+    BigInteger getEnumConstantDeclValue();
+
+    BigInteger getEnumConstantDeclUnsignedValue();
+
+    int getFieldDeclBitWidth();
+
+    int getNumArguments();
+
+    CxCursor getArgument(int i);
 }

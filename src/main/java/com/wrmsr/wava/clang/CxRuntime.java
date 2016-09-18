@@ -14,7 +14,10 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang;
 
-public interface CxTranslationUnit
+public interface CxRuntime
         extends AutoCloseable
 {
+    String getClangVersion();
+
+    CxIndex createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics);
 }

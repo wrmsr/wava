@@ -12,47 +12,30 @@
 |* Clang C++ API.                                                             *|
 |*                                                                            *|
 \*===----------------------------------------------------------------------===*/
-package com.wrmsr.wava.clang.jffi;
+package com.wrmsr.wava.clang;
 
-import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxString;
+import com.google.common.base.Throwables;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.kenai.jffi.Struct.newStruct;
-
-@SuppressWarnings("WeakerAccess")
-public final class JffiCxString
-        extends JffiStruct
-        implements CxString
+public interface CxString
+        extends AutoCloseable
 {
-    static final Descriptor<JffiCxString> DESCRIPTOR = new Descriptor<>(
-            JffiCxString.class,
-            JffiCxString::new,
-            newStruct(
-                    Type.POINTER,
-                    Type.UINT32));
+    String get();
 
-    private boolean isDisposed = false;
-
-    JffiCxString(JffiCxRuntime runtime, byte[] bytes)
+    static String unwrap(CxString string)
     {
-        super(runtime, bytes);
-    }
-
-    @Override
-    public String get()
-    {
-        checkState(!isDisposed);
-        return runtime.getLibClang().clang_getCString(this);
-    }
-
-    @Override
-    public void close()
-            throws Exception
-    {
-        if (!isDisposed) {
-            runtime.getLibClang().clang_disposeString(this);
-            isDisposed = true;
+        if (string == null) {
+            return null;
+        }
+        try {
+            return string.get();
+        }
+        finally {
+            try {
+                string.close();
+            }
+            catch (Exception e) {
+                throw Throwables.propagate(e);
+            }
         }
     }
 }
