@@ -14,7 +14,6 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang.jffi;
 
-import com.kenai.jffi.Struct;
 import com.kenai.jffi.Type;
 import com.wrmsr.wava.clang.CxCursor;
 import com.wrmsr.wava.clang.CxCursorKind;
@@ -27,10 +26,12 @@ public final class JffiCxCursor
         extends JffiStruct
         implements CxCursor
 {
-    static Struct STRUCT = newStruct(
-            Type.UINT32,
-            Type.UINT32,
-            newArray(Type.POINTER, 3));
+    static final Descriptor<JffiCxCursor> DESCRIPTOR = new Descriptor<>(
+            JffiCxCursor::new,
+            newStruct(
+                    Type.UINT32,
+                    Type.UINT32,
+                    newArray(Type.POINTER, 3)));
 
     JffiCxCursor(JffiCxRuntime runtime, byte[] bytes)
     {

@@ -29,6 +29,8 @@ public final class JffiCxIndex
         extends JffiPointer
         implements CxIndex
 {
+    static final Descriptor<JffiCxIndex> DESCRIPTOR = new Descriptor<>(JffiCxIndex::new);
+
     private boolean isDisposed = false;
 
     JffiCxIndex(JffiCxRuntime runtime, long address)

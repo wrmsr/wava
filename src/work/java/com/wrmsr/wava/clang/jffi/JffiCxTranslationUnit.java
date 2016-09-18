@@ -21,6 +21,8 @@ public final class JffiCxTranslationUnit
         extends JffiPointer
         implements CxTranslationUnit
 {
+    static final Descriptor<JffiCxTranslationUnit> DESCRIPTOR = new Descriptor<>(JffiCxTranslationUnit::new);
+
     private boolean isDisposed = false;
 
     JffiCxTranslationUnit(JffiCxRuntime runtime, long address)

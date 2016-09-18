@@ -14,7 +14,6 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang.jffi;
 
-import com.kenai.jffi.Struct;
 import com.kenai.jffi.Type;
 import com.wrmsr.wava.clang.CxString;
 
@@ -26,9 +25,11 @@ public final class JffiCxString
         extends JffiStruct
         implements CxString
 {
-    static final Struct STRUCT = newStruct(
-            Type.POINTER,
-            Type.UINT32);
+    static final Descriptor<JffiCxString> DESCRIPTOR = new Descriptor<>(
+            JffiCxString::new,
+            newStruct(
+                    Type.POINTER,
+                    Type.UINT32));
 
     private boolean isDisposed = false;
 
