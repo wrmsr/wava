@@ -28,7 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.wrmsr.wava.java.poet.Util.checkArgument;
+import static com.google.common.base.Preconditions.checkArgument;
 
 public final class WildcardTypeName
         extends TypeName

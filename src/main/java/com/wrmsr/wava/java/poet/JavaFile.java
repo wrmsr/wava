@@ -38,8 +38,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static com.wrmsr.wava.java.poet.Util.checkArgument;
-import static com.wrmsr.wava.java.poet.Util.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A Java file containing a single top level class.

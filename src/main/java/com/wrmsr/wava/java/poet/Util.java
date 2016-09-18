@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Character.isISOControl;
 
 /**
@@ -59,28 +60,6 @@ final class Util
     static <K, V> Map<K, V> immutableMap(Map<K, V> map)
     {
         return Collections.unmodifiableMap(new LinkedHashMap<>(map));
-    }
-
-    static void checkArgument(boolean condition, String format, Object... args)
-    {
-        if (!condition) {
-            throw new IllegalArgumentException(String.format(format, args));
-        }
-    }
-
-    static <T> T checkNotNull(T reference, String format, Object... args)
-    {
-        if (reference == null) {
-            throw new NullPointerException(String.format(format, args));
-        }
-        return reference;
-    }
-
-    static void checkState(boolean condition, String format, Object... args)
-    {
-        if (!condition) {
-            throw new IllegalStateException(String.format(format, args));
-        }
     }
 
     static <T> List<T> immutableList(Collection<T> collection)

@@ -24,7 +24,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.wrmsr.wava.java.poet.Util.checkArgument;
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * A fragment of a .java file, potentially containing declarations, statements, and documentation.

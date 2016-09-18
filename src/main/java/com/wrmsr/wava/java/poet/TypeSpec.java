@@ -33,9 +33,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static com.wrmsr.wava.java.poet.Util.checkArgument;
-import static com.wrmsr.wava.java.poet.Util.checkNotNull;
-import static com.wrmsr.wava.java.poet.Util.checkState;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.wrmsr.wava.java.poet.Util.hasDefaultModifier;
 import static com.wrmsr.wava.java.poet.Util.requireExactlyOneOf;
 

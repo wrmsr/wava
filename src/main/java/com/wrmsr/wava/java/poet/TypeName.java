@@ -39,6 +39,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Any type in Java's type system, plus {@code void}. This class is an identifier for primitive
  * types like {@code int} and raw reference types like {@code String} and {@code List}. It also
@@ -313,7 +315,7 @@ public class TypeName
 
     public TypeName annotated(List<AnnotationSpec> annotations)
     {
-        Util.checkNotNull(annotations, "annotations == null");
+        checkNotNull(annotations, "annotations == null");
         return new TypeName(keyword, concatAnnotations(annotations));
     }
 

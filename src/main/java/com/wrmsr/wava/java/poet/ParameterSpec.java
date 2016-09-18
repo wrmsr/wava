@@ -26,8 +26,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.wrmsr.wava.java.poet.Util.checkArgument;
-import static com.wrmsr.wava.java.poet.Util.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A generated parameter declaration.

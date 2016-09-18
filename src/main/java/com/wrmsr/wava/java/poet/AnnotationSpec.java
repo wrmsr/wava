@@ -37,8 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.wrmsr.wava.java.poet.Util.characterLiteralWithoutSingleQuotes;
-import static com.wrmsr.wava.java.poet.Util.checkNotNull;
 
 /**
  * A generated annotation on a declaration.

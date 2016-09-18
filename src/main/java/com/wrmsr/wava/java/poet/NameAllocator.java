@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.wrmsr.wava.java.poet.Util.checkNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Assigns Java identifier names to avoid collisions, keywords, and invalid characters. To use,

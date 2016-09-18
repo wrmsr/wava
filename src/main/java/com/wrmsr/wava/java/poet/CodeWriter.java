@@ -31,9 +31,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.wrmsr.wava.java.poet.Util.checkArgument;
-import static com.wrmsr.wava.java.poet.Util.checkNotNull;
-import static com.wrmsr.wava.java.poet.Util.checkState;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.wrmsr.wava.java.poet.Util.join;
 import static com.wrmsr.wava.java.poet.Util.stringLiteralWithDoubleQuotes;
 

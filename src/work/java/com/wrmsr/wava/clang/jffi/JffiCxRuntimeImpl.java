@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
-import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
@@ -40,6 +39,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.wrmsr.wava.clang.jffi.JffiUtils.HeapInvocationBufferParameterBuffer;
+import static com.wrmsr.wava.clang.jffi.JffiUtils.ParameterBuffer;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
 import static com.wrmsr.wava.util.function.Bind.bind;
 import static java.util.Objects.requireNonNull;
@@ -116,7 +117,7 @@ final class JffiCxRuntimeImpl
 
         boolean isPrimitivePush();
 
-        Object push(Object value, InvocationBuffer buffer, Supplier<Object> next);
+        Object push(Object value, ParameterBuffer buffer, Supplier<Object> next);
 
         Object invoke(Function function, HeapInvocationBuffer buffer);
 
@@ -126,7 +127,7 @@ final class JffiCxRuntimeImpl
             @FunctionalInterface
             interface Pusher
             {
-                Object push(Object value, InvocationBuffer buffer, Supplier<Object> next);
+                Object push(Object value, ParameterBuffer buffer, Supplier<Object> next);
             }
 
             private final Type type;
@@ -142,7 +143,7 @@ final class JffiCxRuntimeImpl
                 this.invoker = requireNonNull(invoker);
             }
 
-            Impl(Type type, BiConsumer<Object, InvocationBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
+            Impl(Type type, BiConsumer<Object, ParameterBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
             {
                 this(
                         type,
@@ -167,7 +168,7 @@ final class JffiCxRuntimeImpl
             }
 
             @Override
-            public Object push(Object value, InvocationBuffer buffer, Supplier<Object> next)
+            public Object push(Object value, ParameterBuffer buffer, Supplier<Object> next)
             {
                 return pusher.push(value, buffer, next);
             }
@@ -274,7 +275,7 @@ final class JffiCxRuntimeImpl
                         BigDecimal.class::isAssignableFrom,
                         new TypeAdapter.Impl(
                                 Type.LONGDOUBLE,
-                                (value, buffer) -> ((HeapInvocationBuffer) buffer).putLongDouble(BigDecimal.class.cast(value)),
+                                (value, buffer) -> ((HeapInvocationBufferParameterBuffer) buffer).heapInvocationBuffer.putLongDouble(BigDecimal.class.cast(value)),
                                 invoker::invokeBigDecimal)));
 
         builder.add(
@@ -369,6 +370,16 @@ final class JffiCxRuntimeImpl
         Object invoke(Object[] args);
     }
 
+    private static Supplier<Object> composeParameterPush(List<TypeAdapter> types, Object[] values, ParameterBuffer buffer, Supplier supplier)
+    {
+        checkState((types.size() == 0 && values == null) || (types.size() == values.length));
+        for (int i = types.size() - 1; i >= 0; --i) {
+            TypeAdapter parameterType = types.get(i);
+            supplier = bind(parameterType::push, values[i], buffer, supplier)::apply;
+        }
+        return supplier;
+    }
+
     private final class NativeInvocationHandler
             implements InvocationHandler
     {
@@ -407,11 +418,12 @@ final class JffiCxRuntimeImpl
 
             invoker = args -> {
                 HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
-                checkState((parameterTypes.size() == 0 && args == null) || (parameterTypes.size() == args.length));
-                Supplier<Object> supplier = () -> returnType.invoke(function, buffer);
-                for (int i = parameterTypes.size() - 1; i >= 0; --i) {
-                    supplier = bind(parameterTypes.get(i)::push, args[i], buffer, supplier)::apply;
-                }
+                ParameterBuffer parameterBuffer = new HeapInvocationBufferParameterBuffer(buffer);
+                Supplier<Object> supplier = composeParameterPush(
+                        parameterTypes,
+                        args,
+                        parameterBuffer,
+                        () -> returnType.invoke(function, buffer));
                 return supplier.get();
             };
 
