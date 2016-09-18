@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableList;
+import static com.wrmsr.wava.util.function.Bind.bind;
 import static java.util.Objects.requireNonNull;
 
 final class JffiCxRuntimeImpl
@@ -113,6 +114,8 @@ final class JffiCxRuntimeImpl
 
         Type getType();
 
+        boolean isPrimitivePush();
+
         Object push(Object value, InvocationBuffer buffer, Supplier<Object> next);
 
         Object invoke(Function function, HeapInvocationBuffer buffer);
@@ -127,10 +130,11 @@ final class JffiCxRuntimeImpl
             }
 
             private final Type type;
+            private boolean isPrimitivePush;
             private final Pusher pusher;
             private final BiFunction<Function, HeapInvocationBuffer, Object> invoker;
 
-            Impl(Type type, Pusher pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
+            Impl(Type type, boolean isPrimitivePush, Pusher pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
             {
                 this.type = requireNonNull(type);
                 this.pusher = requireNonNull(pusher);
@@ -141,6 +145,7 @@ final class JffiCxRuntimeImpl
             {
                 this(
                         type,
+                        true,
                         (value, buffer, next) -> {
                             pusher.accept(value, buffer);
                             return next.get();
@@ -152,6 +157,12 @@ final class JffiCxRuntimeImpl
             public Type getType()
             {
                 return type;
+            }
+
+            @Override
+            public boolean isPrimitivePush()
+            {
+                return isPrimitivePush;
             }
 
             @Override
@@ -188,6 +199,7 @@ final class JffiCxRuntimeImpl
                         String.class::equals,
                         new TypeAdapter.Impl(
                                 Type.POINTER,
+                                false,
                                 (value, buffer, next) -> {
                                     byte[] bytes = ((String) value).getBytes();
                                     long address = memoryIO.allocateMemory(bytes.length + 1, false);
@@ -268,9 +280,20 @@ final class JffiCxRuntimeImpl
                 cls -> {
                     if (cls.isArray()) {
                         TypeAdapter componentAdapter = getTypeAdapter(cls.getComponentType());
-                        return Optional.of()
+                        return Optional.of(
+                                new TypeAdapter.Impl(
+                                        Type.POINTER,
+                                        false,
+                                        (value, buffer, next) -> {
+                                            return next.get();
+                                        },
+                                        (function, buffer) -> {
+                                            throw new UnsupportedOperationException();
+                                        }));
                     }
-                    return Optional.empty();
+                    else {
+                        return Optional.empty();
+                    }
                 });
 
         builder.add(buildStructTypeAdapterFactory(JffiCxCursor.DESCRIPTOR));
@@ -317,21 +340,15 @@ final class JffiCxRuntimeImpl
 
     private TypeAdapter.Factory buildEnumTypeAdapterFactory(JffiCxEnums.Descriptor<?> descriptor)
     {
-        return cls -> {
-            if (cls == descriptor.cls) {
-                return Optional.of(
-                        new TypeAdapter.Impl(
-                                Type.SINT,
-                                (value, buffer) -> buffer.putInt(descriptor.toInt.apply(forceCastEnum(value))),
-                                (function, buffer) -> {
-                                    int value = invoker.invokeInt(function, buffer);
-                                    return requireNonNull(descriptor.fromInt.apply(value));
-                                }));
-            }
-            else {
-                return Optional.empty();
-            }
-        };
+        return new TypeAdapter.Factory.Impl(
+                descriptor.cls::equals,
+                new TypeAdapter.Impl(
+                        Type.SINT,
+                        (value, buffer) -> buffer.putInt(descriptor.toInt.apply(forceCastEnum(value))),
+                        (function, buffer) -> {
+                            int value = invoker.invokeInt(function, buffer);
+                            return requireNonNull(descriptor.fromInt.apply(value));
+                        }));
     }
 
     private TypeAdapter getTypeAdapter(Class cls)
