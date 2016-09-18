@@ -13,6 +13,7 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
+import com.wrmsr.wava.clang.CxString;
 import org.junit.Test;
 
 //https://github.com/llvm-mirror/clang/commits/master/include/clang-c
@@ -49,8 +50,9 @@ public class TestJffiCx
             throws Exception
     {
         String libraryName = "/Users/spinlock/src/llvm/clang/build/lib/libclang.dylib";
-        JffiCxRuntime runtime = (JffiCxRuntime) JffiCxRuntime.create(libraryName);
-        libclang libclang = JffiUtils.loadLibrary(libraryName, libclang.class);
-        libclang.clang_getClangVersion();
+        JffiCxRuntime runtime = JffiCxRuntime.create(libraryName);
+        try (CxString ver = runtime.getClangVersion()) {
+            System.out.println(ver.get());
+        }
     }
 }

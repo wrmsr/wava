@@ -33,7 +33,7 @@ public final class JffiCxTranslationUnit
             throws Exception
     {
         if (!isDisposed) {
-            runtime.invokeVoid(runtime.clang_disposeTranslationUnit, ib -> ib.putAddress(address));
+            runtime.getLibClang().clang_disposeTranslationUnit(this);
             isDisposed = true;
         }
     }

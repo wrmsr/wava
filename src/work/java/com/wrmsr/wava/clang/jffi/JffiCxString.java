@@ -41,7 +41,7 @@ public final class JffiCxString
     public String get()
     {
         checkState(!isDisposed);
-        return runtime.invokeString(runtime.clang_getCString, ib -> ib.putStruct(struct, 0));
+        return runtime.getLibClang().clang_getCString(this);
     }
 
     @Override
@@ -49,7 +49,7 @@ public final class JffiCxString
             throws Exception
     {
         if (!isDisposed) {
-            runtime.invokeVoid(runtime.clang_disposeString, ib -> ib.putStruct(struct, 0));
+            runtime.getLibClang().clang_disposeString(this);
             isDisposed = true;
         }
     }

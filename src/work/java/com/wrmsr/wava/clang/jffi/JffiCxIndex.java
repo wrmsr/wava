@@ -38,7 +38,7 @@ public final class JffiCxIndex
             throws Exception
     {
         if (!isDisposed) {
-            runtime.invokeVoid(runtime.clang_disposeIndex, ib -> ib.putAddress(address));
+            runtime.getLibClang().clang_disposeIndex(this);
             isDisposed = true;
         }
     }
