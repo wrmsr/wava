@@ -15,19 +15,28 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
 import com.kenai.jffi.Function;
 import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
 import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxIndex;
 import com.wrmsr.wava.clang.CxRuntime;
-import com.wrmsr.wava.clang.CxString;
 
-import java.io.UnsupportedEncodingException;
-import java.util.function.Consumer;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 public final class JffiCxRuntime
@@ -36,89 +45,92 @@ public final class JffiCxRuntime
     final Invoker invoker;
     final MemoryIO memoryIO;
     final Library library;
+    final LibraryInterface libclang;
 
-    final Function clang_getCString;
-    final Function clang_disposeString;
+    private final List<TypeAdapter> typeAdapters = new ArrayList<>();
 
-    final Function clang_getClangVersion;
+    private interface LibraryInterface
+    {
+        void clang_toggleCrashRecovery(int isEnabled);
 
-    final Function clang_createIndex;
-    final Function clang_disposeIndex;
+        JffiCxString clang_getClangVersion();
+    }
 
-    final Function clang_parseTranslationUnit2;
-    final Function clang_disposeTranslationUnit;
-
-    final Function clang_getCursorKind;
-
+    @SuppressWarnings("UnnecessaryBoxing")
     private JffiCxRuntime(Invoker invoker, MemoryIO memoryIO, Library library)
     {
         this.invoker = requireNonNull(invoker);
         this.memoryIO = requireNonNull(memoryIO);
         this.library = requireNonNull(library);
 
-        // CINDEX_LINKAGE const char *clang_getCString(CXString string);
-        clang_getCString = new Function(
-                library.getSymbolAddress("clang_getCString"),
-                Type.POINTER,
-                JffiCxString.STRUCT);
+        typeAdapters.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(byte.class, Byte.class)::contains,
+                        Type.VOID,
+                        (value, buffer) -> {
+                            throw new UnsupportedOperationException();
+                        },
+                        invoker::invokeInt));
 
-        // CINDEX_LINKAGE void clang_disposeString(CXString string);
-        clang_disposeString = new Function(
-                library.getSymbolAddress("clang_disposeString"),
-                Type.VOID,
-                JffiCxString.STRUCT);
+        typeAdapters.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.<Class>of(String.class)::contains,
+                        Type.POINTER,
+                        (value, buffer) -> {
+                            throw new UnsupportedOperationException();
+                        },
+                        (function, buffer) -> {
+                            long address = invoker.invokeAddress(function, buffer);
+                            byte[] bytes = memoryIO.getZeroTerminatedByteArray(address);
+                            return new String(bytes);
+                        }));
 
-        // CINDEX_LINKAGE CXString clang_getClangVersion(void);
-        clang_getClangVersion = new Function(
-                library.getSymbolAddress("clang_getClangVersion"),
-                JffiCxString.STRUCT);
+        typeAdapters.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(byte.class, Byte.class)::contains,
+                        Type.SINT8,
+                        (value, buffer) -> buffer.putByte(((Number) value).intValue()),
+                        (function, buffer) -> Byte.valueOf((byte) invoker.invokeInt(function, buffer))));
 
-        // CINDEX_LINKAGE CXIndex clang_createIndex(int excludeDeclarationsFromPCH,
-        //                                          int displayDiagnostics);
-        clang_createIndex = new Function(
-                library.getSymbolAddress("clang_createIndex"),
-                Type.POINTER,
-                Type.SINT,
-                Type.SINT);
+        typeAdapters.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(short.class, Short.class)::contains,
+                        Type.SINT16,
+                        (value, buffer) -> buffer.putShort(((Number) value).intValue()),
+                        (function, buffer) -> Short.valueOf((short) invoker.invokeInt(function, buffer))));
 
-        // CINDEX_LINKAGE void clang_disposeIndex(CXIndex index);
-        clang_disposeIndex = new Function(
-                library.getSymbolAddress("clang_disposeIndex"),
-                Type.VOID,
-                Type.POINTER);
+        typeAdapters.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(int.class, Integer.class)::contains,
+                        Type.SINT32,
+                        (value, buffer) -> buffer.putInt(((Number) value).intValue()),
+                        (function, buffer) -> Integer.valueOf((int) invoker.invokeInt(function, buffer))));
 
-        // CINDEX_LINKAGE enum CXErrorCode
-        // clang_parseTranslationUnit2(CXIndex CIdx,
-        //                             const char *source_filename,
-        //                             const char *const *command_line_args,
-        //                             int num_command_line_args,
-        //                             struct CXUnsavedFile *unsaved_files,
-        //                             unsigned num_unsaved_files,
-        //                             unsigned options,
-        //                             CXTranslationUnit *out_TU);
-        clang_parseTranslationUnit2 = new Function(
-                library.getSymbolAddress("clang_parseTranslationUnit2"),
-                Type.UINT,
-                Type.POINTER,
-                Type.POINTER,
-                Type.POINTER,
-                Type.SINT,
-                Type.POINTER,
-                Type.UINT,
-                Type.UINT,
-                Type.POINTER);
+        typeAdapters.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(long.class, Long.class)::contains,
+                        Type.SINT64,
+                        (value, buffer) -> buffer.putLong(((Number) value).intValue()),
+                        (function, buffer) -> Long.valueOf((long) invoker.invokeLong(function, buffer))));
 
-        // CINDEX_LINKAGE void clang_disposeTranslationUnit(CXTranslationUnit);
-        clang_disposeTranslationUnit = new Function(
-                library.getSymbolAddress("clang_disposeTranslationUnit"),
-                Type.VOID,
-                Type.POINTER);
+        typeAdapters.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(float.class, Float.class)::contains,
+                        Type.FLOAT,
+                        (value, buffer) -> buffer.putFloat(((Number) value).floatValue()),
+                        (function, buffer) -> Float.valueOf((byte) invoker.invokeFloat(function, buffer))));
 
-        // CINDEX_LINKAGE enum CXCursorKind clang_getCursorKind(CXCursor);
-        clang_getCursorKind = new Function(
-                library.getSymbolAddress("clang_getCursorKind"),
-                Type.UINT,
-                JffiCxCursor.STRUCT);
+        typeAdapters.add(
+                new TypeAdapter.Impl(
+                        ImmutableSet.of(double.class, Double.class)::contains,
+                        Type.DOUBLE,
+                        (value, buffer) -> buffer.putDouble(((Number) value).doubleValue()),
+                        (function, buffer) -> Double.valueOf((byte) invoker.invokeDouble(function, buffer))));
+
+        libclang = LibraryInterface.class.cast(
+                Proxy.newProxyInstance(LibraryInterface.class.getClassLoader(),
+                        new Class[] {LibraryInterface.class},
+                        new NativeInvocationHandler()));
     }
 
     public static CxRuntime create(String libraryPath)
@@ -135,59 +147,174 @@ public final class JffiCxRuntime
     {
     }
 
-    @Override
-    public CxString getClangVersion()
+    private final class NativeInvocationHandler
+            implements InvocationHandler
     {
-        return new JffiCxString(this, invokeStruct(clang_getClangVersion, ib -> {
-        }));
-    }
+        private final ConcurrentMap<Method, MethodInvoker> invokers = new ConcurrentHashMap<>();
 
-    @Override
-    public CxIndex createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics)
-    {
-        return new JffiCxIndex(this, invokeAddress(clang_createIndex, ib -> {
-            ib.putInt(excludeDeclarationsFromPCH);
-            ib.putInt(displayDiagnostics);
-        }));
-    }
-
-    long invokeAddress(Function function, Consumer<HeapInvocationBuffer> argPopulator)
-    {
-        HeapInvocationBuffer ib = new HeapInvocationBuffer(function);
-        argPopulator.accept(ib);
-        return invoker.invokeAddress(function, ib);
-    }
-
-    String invokeString(Function function, Consumer<HeapInvocationBuffer> argPopulator)
-    {
-        long address = invokeAddress(function, argPopulator);
-        byte[] bytes = memoryIO.getZeroTerminatedByteArray(address);
-        try {
-            return new String(bytes, "UTF-8");
+        @Override
+        public Object invoke(Object self, Method method, Object[] argArray)
+                throws Throwable
+        {
+            return getMethodInvoker(method).invoke(argArray);
         }
-        catch (UnsupportedEncodingException e) {
-            throw Throwables.propagate(e);
+
+        private MethodInvoker getMethodInvoker(Method method)
+        {
+            MethodInvoker invoker = invokers.get(method);
+            if (invoker != null) {
+                return invoker;
+            }
+            Class returnType = method.getReturnType();
+            Class[] parameterTypes = method.getParameterTypes();
+            Type ffiReturnType = convertClassToFFI(returnType);
+            Type[] ffiParameterTypes = new Type[parameterTypes.length];
+            for (int i = 0; i < ffiParameterTypes.length; ++i) {
+                ffiParameterTypes[i] = convertClassToFFI(parameterTypes[i]);
+            }
+            final long address = library.getSymbolAddress(method.getName());
+            if (address == 0) {
+                throw new UnsatisfiedLinkError(String.format("Could not locate '%s': %s", method.getName(), Library.getLastError()));
+            }
+            Function function = new Function(address, ffiReturnType, ffiParameterTypes);
+            invoker = new DefaultMethodInvoker(function, returnType, parameterTypes);
+            invokers.put(method, invoker);
+            return invoker;
         }
     }
 
-    byte[] invokeStruct(Function function, Consumer<HeapInvocationBuffer> argPopulator)
+    interface TypeAdapter
     {
-        HeapInvocationBuffer ib = new HeapInvocationBuffer(function);
-        argPopulator.accept(ib);
-        return invoker.invokeStruct(function, ib);
+        boolean matchesClass(Class cls);
+
+        Type getType();
+
+        void push(Object value, HeapInvocationBuffer buffer);
+
+        Object invoke(Function function, HeapInvocationBuffer buffer);
+
+        final class Impl
+                implements TypeAdapter
+        {
+            private final Predicate<Class> classMatcher;
+            private final Type type;
+            private final BiConsumer<Object, HeapInvocationBuffer> pusher;
+            private final BiFunction<Function, HeapInvocationBuffer, Object> invoker;
+
+            private Impl(Predicate<Class> classMatcher, Type type, BiConsumer<Object, HeapInvocationBuffer> pusher, BiFunction<Function, HeapInvocationBuffer, Object> invoker)
+            {
+                this.classMatcher = requireNonNull(classMatcher);
+                this.type = requireNonNull(type);
+                this.pusher = requireNonNull(pusher);
+                this.invoker = requireNonNull(invoker);
+            }
+
+            @Override
+            public boolean matchesClass(Class cls)
+            {
+                return classMatcher.test(cls);
+            }
+
+            @Override
+            public Type getType()
+            {
+                return type;
+            }
+
+            @Override
+            public void push(Object value, HeapInvocationBuffer buffer)
+            {
+                pusher.accept(value, buffer);
+            }
+
+            @Override
+            public Object invoke(Function function, HeapInvocationBuffer buffer)
+            {
+                return invoker.apply(function, buffer);
+            }
+        }
     }
 
-    void invokeVoid(Function function, Consumer<HeapInvocationBuffer> argPopulator)
+    private Type convertClassToFFI(Class type)
     {
-        HeapInvocationBuffer ib = new HeapInvocationBuffer(function);
-        argPopulator.accept(ib);
-        invoker.invokeInt(function, ib);
+        if (type == void.class || type == Void.class) {
+            // ...
+        }
+        else if (BigDecimal.class.isAssignableFrom(type)) {
+            return Type.LONGDOUBLE;
+        }
+        else if (JffiUtils.Address.class.isAssignableFrom(type)) {
+            return Type.POINTER;
+        }
+        else if (JffiStruct.class.isAssignableFrom(type)) {
+            try {
+                return (Type) type.getDeclaredField("STRUCT").get(null);
+            }
+            catch (ReflectiveOperationException e) {
+                throw Throwables.propagate(e);
+            }
+        }
+        else {
+            throw new IllegalArgumentException("Unknown type: " + type);
+        }
     }
 
-    int invokeInt(Function function, Consumer<HeapInvocationBuffer> argPopulator)
+    private interface MethodInvoker
     {
-        HeapInvocationBuffer ib = new HeapInvocationBuffer(function);
-        argPopulator.accept(ib);
-        return invoker.invokeInt(function, ib);
+        Object invoke(Object[] args);
+    }
+
+    private final class DefaultMethodInvoker
+            implements MethodInvoker
+    {
+        private final Function function;
+        private final Class returnType;
+        private final Class[] parameterTypes;
+
+        DefaultMethodInvoker(Function function, Class returnType, Class[] parameterTypes)
+        {
+            this.function = function;
+            this.returnType = returnType;
+            this.parameterTypes = parameterTypes;
+        }
+
+        @Override
+        public Object invoke(Object[] args)
+        {
+            HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
+            checkState((parameterTypes.length == 0 && args == null) || (parameterTypes.length == args.length));
+            for (int i = 0; i < parameterTypes.length; ++i) {
+                if (parameterTypes[i] == byte.class || parameterTypes[i] == Byte.class) {
+                    // ...
+                }
+                else if (BigDecimal.class.isAssignableFrom(parameterTypes[i])) {
+                    buffer.putLongDouble(BigDecimal.class.cast(args[i]));
+                }
+                else if (JffiUtils.Address.class.isAssignableFrom(parameterTypes[i])) {
+                    buffer.putAddress(((JffiUtils.Address) args[i]).address);
+                }
+                else {
+                    throw new RuntimeException("Unknown parameter type: " + parameterTypes[i]);
+                }
+            }
+            Invoker invoker = Invoker.getInstance();
+            if (returnType == void.class || returnType == Void.class) {
+                invoker.invokeInt(function, buffer);
+                return null;
+            }
+            else if (returnType == byte.class || returnType == Byte.class) {
+                // ...
+            }
+            else if (BigDecimal.class.isAssignableFrom(returnType)) {
+                return invoker.invokeBigDecimal(function, buffer);
+            }
+            else if (JffiUtils.Address.class.isAssignableFrom(returnType)) {
+                return new JffiUtils.Address(invoker.invokeAddress(function, buffer));
+            }
+            else if (JffiStruct.class.isAssignableFrom(returnType)) {
+                return invoker.invokeStruct(function, buffer);
+            }
+            throw new RuntimeException("Unknown return type: " + returnType);
+        }
     }
 }
