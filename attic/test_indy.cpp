@@ -53,7 +53,6 @@ int main(int argc, const char *const argv[]) {
     reps += poll;
     uint64_t diff = nano_time() - last;
     if (diff >= scale) {
-
       mpz_t rps;
       mpz_init(rps);
       mpz_add_ui(rps, rps, reps);

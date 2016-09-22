@@ -14,7 +14,7 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxToken;
+import com.wrmsr.wava.clang.api.CxToken;
 
 import static com.kenai.jffi.Array.newArray;
 import static com.kenai.jffi.Struct.newStruct;

@@ -13,28 +13,24 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.kenai.jffi.ClosureManager;
-import com.kenai.jffi.Invoker;
-import com.kenai.jffi.Library;
-import com.kenai.jffi.MemoryIO;
-import com.wrmsr.wava.clang.CxCallingConv;
-import com.wrmsr.wava.clang.CxCursorKind;
-import com.wrmsr.wava.clang.CxCxxAccessSpecifier;
-import com.wrmsr.wava.clang.CxError;
-import com.wrmsr.wava.clang.CxEvalResultKind;
-import com.wrmsr.wava.clang.CxIndex;
-import com.wrmsr.wava.clang.CxRefQualifierKind;
-import com.wrmsr.wava.clang.CxRuntime;
-import com.wrmsr.wava.clang.CxStorageClass;
-import com.wrmsr.wava.clang.CxString;
-import com.wrmsr.wava.clang.CxTemplateArgumentKind;
-import com.wrmsr.wava.clang.CxTokenKind;
-import com.wrmsr.wava.clang.CxTranslationUnit;
-import com.wrmsr.wava.clang.CxTypeKind;
+import com.wrmsr.wava.clang.api.CxCallingConv;
+import com.wrmsr.wava.clang.api.CxCursorKind;
+import com.wrmsr.wava.clang.api.CxCxxAccessSpecifier;
+import com.wrmsr.wava.clang.api.CxError;
+import com.wrmsr.wava.clang.api.CxEvalResultKind;
+import com.wrmsr.wava.clang.api.CxIndex;
+import com.wrmsr.wava.clang.api.CxRefQualifierKind;
+import com.wrmsr.wava.clang.api.CxRuntime;
+import com.wrmsr.wava.clang.api.CxStorageClass;
+import com.wrmsr.wava.clang.api.CxString;
+import com.wrmsr.wava.clang.api.CxTemplateArgumentKind;
+import com.wrmsr.wava.clang.api.CxTokenKind;
+import com.wrmsr.wava.clang.api.CxTranslationUnit;
+import com.wrmsr.wava.clang.api.CxTypeKind;
 
 import static com.wrmsr.wava.clang.jffi.JffiUtils.Address;
 
-public abstract class JffiCxRuntime
+abstract class JffiCxRuntime
         implements CxRuntime
 {
     interface LibClang
@@ -304,14 +300,5 @@ public abstract class JffiCxRuntime
     public CxIndex createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics)
     {
         return getLibClang().clang_createIndex(excludeDeclarationsFromPCH, displayDiagnostics);
-    }
-
-    public static CxRuntime create(String libraryPath)
-    {
-        Invoker invoker = Invoker.getInstance();
-        MemoryIO memory = MemoryIO.getCheckedInstance();
-        ClosureManager closureManager = ClosureManager.getInstance();
-        Library library = JffiUtils.openLibrary(libraryPath);
-        return new JffiCxRuntimeImpl(invoker, memory, closureManager, library);
     }
 }

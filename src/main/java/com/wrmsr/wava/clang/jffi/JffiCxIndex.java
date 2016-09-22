@@ -13,11 +13,11 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.wrmsr.wava.clang.CxError;
-import com.wrmsr.wava.clang.CxException;
-import com.wrmsr.wava.clang.CxIndex;
-import com.wrmsr.wava.clang.CxTranslationUnit;
-import com.wrmsr.wava.clang.CxTranslationUnitFlags;
+import com.wrmsr.wava.clang.api.CxError;
+import com.wrmsr.wava.clang.api.CxException;
+import com.wrmsr.wava.clang.api.CxIndex;
+import com.wrmsr.wava.clang.api.CxTranslationUnit;
+import com.wrmsr.wava.clang.api.CxTranslationUnitFlags;
 
 import java.util.List;
 import java.util.Set;
@@ -42,6 +42,7 @@ final class JffiCxIndex
             throws Exception
     {
         if (!isDisposed) {
+            // FIXME fuk
             runtime.getLibClang().clang_disposeIndex(this);
             isDisposed = true;
         }

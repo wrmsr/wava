@@ -41,7 +41,7 @@ public final class JTypeSpecifier
 
     public static JTypeSpecifier of(String... parts)
     {
-        return new JTypeSpecifier(JQualifiedName.of(parts), ImmutableList.of());
+        return new JTypeSpecifier(JQualifiedName.of((Object[]) parts), ImmutableList.of());
     }
 
     @Override

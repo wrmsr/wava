@@ -16,6 +16,8 @@ package com.wrmsr.wava;
 // http://blog.glehmann.net/2014/12/29/Playing-with-libclang/
 // http://eli.thegreenplace.net/2011/07/03/parsing-c-in-python-with-clang
 // https://github.com/eliben/llvm-clang-samples/blob/master/tools/htmlize-ast-dump.py
+// Frontend/PrintPreprocessedOutput.cpp
+// static void DoPrintMacros(Preprocessor &PP, raw_ostream *OS) {
 
 // LayoutOverrideSource.cpp
 // void ASTDumper::dumpDecl(const Decl *D) {

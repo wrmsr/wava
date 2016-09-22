@@ -14,11 +14,11 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxCursor;
-import com.wrmsr.wava.clang.CxCursorKind;
-import com.wrmsr.wava.clang.CxCursorVisitor;
-import com.wrmsr.wava.clang.CxString;
-import com.wrmsr.wava.clang.CxType;
+import com.wrmsr.wava.clang.api.CxCursor;
+import com.wrmsr.wava.clang.api.CxCursorKind;
+import com.wrmsr.wava.clang.api.CxCursorVisitor;
+import com.wrmsr.wava.clang.api.CxString;
+import com.wrmsr.wava.clang.api.CxType;
 
 import static com.kenai.jffi.Array.newArray;
 import static com.kenai.jffi.Struct.newStruct;

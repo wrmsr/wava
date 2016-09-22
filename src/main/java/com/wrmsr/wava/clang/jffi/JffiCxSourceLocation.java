@@ -14,7 +14,7 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxSourceLocation;
+import com.wrmsr.wava.clang.api.CxSourceLocation;
 
 import static com.kenai.jffi.Array.newArray;
 import static com.kenai.jffi.Struct.newStruct;
@@ -30,7 +30,7 @@ final class JffiCxSourceLocation
                     newArray(Type.POINTER, 2),
                     Type.UINT32));
 
-    public JffiCxSourceLocation(JffiCxRuntime runtime, byte[] struct)
+    JffiCxSourceLocation(JffiCxRuntime runtime, byte[] struct)
     {
         super(runtime, struct);
     }

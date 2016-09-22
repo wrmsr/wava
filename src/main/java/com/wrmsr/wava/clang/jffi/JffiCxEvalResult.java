@@ -13,7 +13,7 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.wrmsr.wava.clang.CxEvalResult;
+import com.wrmsr.wava.clang.api.CxEvalResult;
 
 final class JffiCxEvalResult
         extends JffiPointer

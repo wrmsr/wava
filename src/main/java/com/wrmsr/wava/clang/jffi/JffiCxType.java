@@ -14,8 +14,8 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxString;
-import com.wrmsr.wava.clang.CxType;
+import com.wrmsr.wava.clang.api.CxString;
+import com.wrmsr.wava.clang.api.CxType;
 
 import static com.kenai.jffi.Array.newArray;
 import static com.kenai.jffi.Struct.newStruct;
@@ -31,7 +31,7 @@ final class JffiCxType
                     Type.UINT32,
                     newArray(Type.POINTER, 2)));
 
-    public JffiCxType(JffiCxRuntime runtime, byte[] struct)
+    JffiCxType(JffiCxRuntime runtime, byte[] struct)
     {
         super(runtime, struct);
     }

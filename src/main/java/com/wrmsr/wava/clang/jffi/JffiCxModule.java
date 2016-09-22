@@ -13,7 +13,7 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.wrmsr.wava.clang.CxModule;
+import com.wrmsr.wava.clang.api.CxModule;
 
 final class JffiCxModule
         extends JffiPointer

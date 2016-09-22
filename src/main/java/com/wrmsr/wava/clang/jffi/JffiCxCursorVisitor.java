@@ -13,7 +13,7 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.wrmsr.wava.clang.CxChildVisitResult;
+import com.wrmsr.wava.clang.api.CxChildVisitResult;
 
 import static com.wrmsr.wava.clang.jffi.JffiUtils.Address;
 

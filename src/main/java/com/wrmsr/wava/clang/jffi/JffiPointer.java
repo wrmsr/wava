@@ -43,9 +43,9 @@ abstract class JffiPointer
 
     JffiPointer(JffiCxRuntime runtime, long address)
     {
-        checkArgument(address != 0);
         this.runtime = requireNonNull(runtime);
         this.address = address & MASK;
+        checkArgument(this.address != 0);
     }
 
     @Override

@@ -13,8 +13,8 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.wrmsr.wava.clang.CxCursor;
-import com.wrmsr.wava.clang.CxTranslationUnit;
+import com.wrmsr.wava.clang.api.CxCursor;
+import com.wrmsr.wava.clang.api.CxTranslationUnit;
 
 final class JffiCxTranslationUnit
         extends JffiPointer
@@ -36,6 +36,7 @@ final class JffiCxTranslationUnit
             throws Exception
     {
         if (!isDisposed) {
+            // FIXME fuk
             runtime.getLibClang().clang_disposeTranslationUnit(this);
             isDisposed = true;
         }

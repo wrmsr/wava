@@ -14,7 +14,7 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxSourceRange;
+import com.wrmsr.wava.clang.api.CxSourceRange;
 
 import static com.kenai.jffi.Array.newArray;
 import static com.kenai.jffi.Struct.newStruct;
@@ -31,7 +31,7 @@ final class JffiCxSourceRange
                     Type.UINT32,
                     Type.UINT32));
 
-    public JffiCxSourceRange(JffiCxRuntime runtime, byte[] struct)
+    JffiCxSourceRange(JffiCxRuntime runtime, byte[] struct)
     {
         super(runtime, struct);
     }

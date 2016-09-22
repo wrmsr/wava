@@ -14,7 +14,7 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxString;
+import com.wrmsr.wava.clang.api.CxString;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.kenai.jffi.Struct.newStruct;

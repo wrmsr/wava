@@ -15,15 +15,16 @@ package com.wrmsr.wava;
 
 import com.wrmsr.wava.util.POSIXUtils;
 import jnr.posix.FileStat;
-import jnr.posix.MacOSFileStat;
 import jnr.posix.POSIX;
 import org.junit.Test;
+import sqlite3.sqlite3;
 
 import static com.google.common.base.Preconditions.checkState;
 
 public class TestSqlite
 {
     private sqlite3 sqlite3;
+
     private POSIX posix;
 
     public final class StubImpl

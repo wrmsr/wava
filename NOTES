@@ -6,8 +6,8 @@
 
 
 
-
-
+./configure --with-debug-level=slowdebug --with-jobs=8 --with-jvm-variants=server --disable-warnings-as-errors
+CONF=macosx-x86_64-normal-server-slowdebug make images
 
 
 
