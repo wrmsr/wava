@@ -1,0 +1,175 @@
+// https://stackoverflow.com/questions/26829119/how-to-make-lldb-ignore-exc-bad-access-exception fuck
+// process handle SIGPIPE SIGBUS SIGSEGV -n true -p true -s false
+
+
+
+I needed this in a recent project, so I just built my own LLDB. I patched a line in tools/debugserver/source/MacOSX/MachTask.mm from
+  err = ::task_set_exception_ports (task, m_exc_port_info.mask, m_exception_port, EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES, THREAD_STATE_NONE);
+to
+  err = ::task_set_exception_ports (task, m_exc_port_info.mask & ~EXC_MASK_BAD_ACCESS, m_exception_port, EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES, THREAD_STATE_NONE);
+
+/Applications/CLion.app/Contents/bin/lldb/LLDB.framework/Resources/debugserver
+
+
+
+clear ; python hax.py ; cp ~/debugserver.hax /Applications/CLion.app/Contents/bin/lldb/LLDB.framework/Resources/debugserver ; chmod +x /Applications/CLion.app/Contents/bin/lldb/LLDB.framework/Resources/debugserver ; codesign -f -s  "gdb-cert" /Applications/CLion.app/Contents/bin/lldb/LLDB.framework/Resources/debugserver
+
+
+                                            __ZN8MachTask20StartExceptionThreadER8DNBError_100037f14:        // MachTask::StartExceptionThread(DNBError&)
+
+
+
+
+
+000000010003804c 418B1424                        mov        edx, dword [ds:r12]
+0000000100038050 B901000080                      mov        ecx, 0x80000001
+0000000100038055 41B80D000000                    mov        r8d, 0xd
+000000010003805b 4489FF                          mov        edi, r15d
+000000010003805e E8C7320100                      call       imp___stubs__task_set_exception_ports
+0000000100038063 41894500                        mov        dword [ds:r13+0x0], eax
+0000000100038067 41C7450401000000                mov        dword [ds:r13+0x4], 0x1
+000000010003806f 41F6450801                      test       byte [ds:r13+0x8], 0x1
+0000000100038074 752B                            jne        0x1000380a1
+                                       ; Basic Block Input Regs: <nothing> -  Killed Regs: r13
+0000000100038076 6641C745080000                  mov        word [ds:r13+0x8], 0x0
+000000010003807d EB31                            jmp        0x1000380b0
+                                       ; Basic Block Input Regs: r13 -  Killed Regs: rsi rdi
+000000010003807f 488D3546B30100                  lea        rsi, qword [ds:0x1000533cc]   ; "failed to get exception port info" XREF=0x10003804a
+0000000100038086 4C89EF                          mov        rdi, r13
+0000000100038089 E8E6080000                      call       __ZN8DNBError14SetErrorStringEPKc_100038974 ; DNBError::SetErrorString(char const*)
+                                       ; Basic Block Input Regs: rbx -  Killed Regs: rbx
+000000010003808e 31DB                            xor        ebx, ebx                      ; XREF=0x100037f7a, 0x100037fec, 0x100038035
+                                       ; Basic Block Input Regs: rbx -  Killed Regs: rax rbx rsp rbp r12 r13 r14 r15
+0000000100038090 88D8                            mov        al, bl                        ; XREF=0x100037f97, 0x1000380f9, 0x100038147
+0000000100038092 4883C438                        add        rsp, 0x38
+0000000100038096 5B                              pop        rbx
+0000000100038097 415C                            pop        r12
+0000000100038099 415D                            pop        r13
+000000010003809b 415E                            pop        r14
+000000010003809d 415F                            pop        r15
+000000010003809f 5D                              pop        rbp
+00000001000380a0 C3                              ret        
+                                       ; Basic Block Input Regs: r13 -  Killed Regs: rax r13
+00000001000380a1 498B4518                        mov        rax, qword [ds:r13+0x18]      ; XREF=0x100038074
+
+
+0x00000001000380a1 - 0x000000010003804c
+
+
+
+
+000000010003804c 418B1424                        mov        edx, dword [ds:r12]
+and edx, 0xFFFFFFFD
+0000000100038050 B901000080                      mov        ecx, 0x80000001
+0000000100038055 41B80D000000                    mov        r8d, 0xd
+000000010003805b 4489FF                          mov        edi, r15d
+** 000000010003805e E8C7320100                      call       imp___stubs__task_set_exception_ports
+0000000100038063 41894500                        mov        dword [ds:r13+0x0], eax
+0000000100038067 41C7450401000000                mov        dword [ds:r13+0x4], 0x1
+000000010003806f 41F6450801                      test       byte [ds:r13+0x8], 0x1
+** 0000000100038074 752B                            jne        0x1000380a1
+                                       ; Basic Block Input Regs: <nothing> -  Killed Regs: r13
+0000000100038076 6641C745080000                  mov        word [ds:r13+0x8], 0x0
+** 000000010003807d EB31                            jmp        0x1000380b0
+                                       ; Basic Block Input Regs: r13 -  Killed Regs: rsi rdi
+------------
+000000010003807f 488D3546B30100                  lea        rsi, qword [ds:0x1000533cc]   ; "failed to get exception port info" XREF=0x10003804a
+0000000100038086 4C89EF                          mov        rdi, r13
+0000000100038089 E8E6080000                      call       __ZN8DNBError14SetErrorStringEPKc_100038974 ; DNBError::SetErrorString(char const*)
+                                       ; Basic Block Input Regs: rbx -  Killed Regs: rbx
+000000010003808e 31DB                            xor        ebx, ebx                      ; XREF=0x100037f7a, 0x100037fec, 0x100038035
+                                       ; Basic Block Input Regs: rbx -  Killed Regs: rax rbx rsp rbp r12 r13 r14 r15
+0000000100038090 88D8                            mov        al, bl                        ; XREF=0x100037f97, 0x1000380f9, 0x100038147
+0000000100038092 4883C438                        add        rsp, 0x38
+0000000100038096 5B                              pop        rbx
+0000000100038097 415C                            pop        r12
+0000000100038099 415D                            pop        r13
+000000010003809b 415E                            pop        r14
+000000010003809d 415F                            pop        r15
+000000010003809f 5D                              pop        rbp
+00000001000380a0 C3                              ret        
+-----
+                                       ; Basic Block Input Regs: r13 -  Killed Regs: rax r13
+00000001000380a1 498B4518                        mov        rax, qword [ds:r13+0x18]      ; XREF=0x100038074
+
+
+0:   83 e6 fd                and    esi,0xfffffffd
+   
+
+7433
+
+418B1424
+B901000080
+41B80D000000
+4489FF
+E8C7320100
+41894500
+41C7450401000000
+41F6450801
+752B
+6641C745080000
+EB31
+
+488D3546B30100
+4C89EF
+E8E6080000
+31DB
+88D8
+4883C438
+5B
+415C
+415D
+415E
+415F
+5D
+C3
+
+498B4518
+
+
+
+000000010003804c
+418B1424B90100008041B80D0000004489FFE8C73201004189450041C745040100000041F6450801752B6641C745080000EB31488D3546B301004C89EFE8E608000031DB88D84883C4385B415C415D415E415F5DC3498B4518
+
+
+
+7436
+
+418B1424
+83E6FD
+B901000080
+41B80D000000
+4489FF
+E8C4320100
+41894500
+41C7450401000000
+41F6450801
+7528
+6641C745080000
+EB2E
+
+90909090
+909090
+9090909090
+
+31DB
+88D8
+4883C438
+5B
+415C
+415D
+415E
+415F
+5D
+C3
+
+498B4518
+
+
+
+
+000000010003804c
+7433418B1424B90100008041B80D0000004489FFE8C73201004189450041C745040100000041F6450801752B6641C745080000EB31488D3546B301004C89EFE8E608000031DB88D84883C4385B415C415D415E415F5DC3498B4518
+7436418B142483E6FDB90100008041B80D0000004489FFE8C43201004189450041C745040100000041F645080175286641C745080000EB2E90909090909090909090909031DB88D84883C4385B415C415D415E415F5DC3498B4518
+
+

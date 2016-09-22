@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+clang++ tool.cpp -o tool
+    $(/Users/spinlock/src/llvm/llvm/build/bin/llvm-config --cxxflags) \ 
+    $(/Users/spinlock/src/llvm/llvm/build/bin/llvm-config --ldflags --libs --system-libs) \
+    -L/Users/spinlock/src/llvm/clang/build/lib \
+    -I/Users/spinlock/src/llvm/clang/include \
+    -lclangAST \
+    -lclangASTMatchers \
+    -lclangAnalysis \
+    -lclangBasic \
+    -lclangDriver \
+    -lclangEdit \
+    -lclangFrontend \
+    -lclangFrontendTool \
+    -lclangLex \
+    -lclangParse \
+    -lclangSema \
+    -lclangEdit \
+    -lclangRewrite \
+    -lclangRewriteFrontend \
+    -lclangStaticAnalyzerFrontend \
+    -lclangStaticAnalyzerCheckers \
+    -lclangStaticAnalyzerCore \
+    -lclangSerialization \
+    -lclangToolingCore \
+    -lclangTooling \
+    -lclangFormat 

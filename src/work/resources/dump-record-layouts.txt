@@ -1,0 +1,98 @@
+
+*** Dumping AST Record Layout
+         0 | union (anonymous at /Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include/bits/alltypes.h:52:18)
+         0 |   int [9] __i
+         0 |   unsigned int [9] __s
+           | [sizeof=36, align=4]
+
+*** Dumping AST Record Layout
+         0 | union (anonymous at /Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include/bits/alltypes.h:57:18)
+         0 |   int [6] __i
+         0 |   void *[6] __p
+           | [sizeof=24, align=4]
+
+*** Dumping AST Record Layout
+         0 | union (anonymous at /Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include/bits/alltypes.h:62:18)
+         0 |   int [12] __i
+         0 |   void *[12] __p
+           | [sizeof=48, align=4]
+
+*** Dumping AST Record Layout
+         0 | union (anonymous at /Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include/bits/alltypes.h:67:18)
+         0 |   int [8] __i
+         0 |   void *[8] __p
+           | [sizeof=32, align=4]
+
+*** Dumping AST Record Layout
+         0 | union (anonymous at /Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include/bits/alltypes.h:72:18)
+         0 |   int [5] __i
+         0 |   void *[5] __p
+           | [sizeof=20, align=4]
+
+*** Dumping AST Record Layout
+         0 | struct timespec
+         0 |   time_t tv_sec
+         4 |   long tv_nsec
+           | [sizeof=8, align=4]
+
+*** Dumping AST Record Layout
+         0 | struct stat
+         0 |   dev_t st_dev
+         8 |   int __st_dev_padding
+        12 |   long __st_ino_truncated
+        16 |   mode_t st_mode
+        20 |   nlink_t st_nlink
+        24 |   uid_t st_uid
+        28 |   gid_t st_gid
+        32 |   dev_t st_rdev
+        40 |   int __st_rdev_padding
+        48 |   off_t st_size
+        56 |   blksize_t st_blksize
+        64 |   blkcnt_t st_blocks
+        72 |   struct timespec st_atim
+        72 |     time_t tv_sec
+        76 |     long tv_nsec
+        80 |   struct timespec st_mtim
+        80 |     time_t tv_sec
+        84 |     long tv_nsec
+        88 |   struct timespec st_ctim
+        88 |     time_t tv_sec
+        92 |     long tv_nsec
+        96 |   ino_t st_ino
+           | [sizeof=104, align=8]
+
+*** Dumping IRgen Record Layout
+Record: RecordDecl 0x7fc42a067578 </Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include/bits/alltypes.h:247:1, col:48> col:8 struct timespec definition
+|-FieldDecl 0x7fc42a067630 <col:19, col:26> col:26 tv_sec 'time_t':'long'
+`-FieldDecl 0x7fc42a067688 <col:34, col:39> col:39 tv_nsec 'long'
+
+Layout: <CGRecordLayout
+  LLVMType:%struct.timespec = type { i32, i32 }
+  IsZeroInitializable:1
+  BitFields:[
+]>
+
+*** Dumping IRgen Record Layout
+Record: RecordDecl 0x7fc42a06c758 </Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include/bits/stat.h:4:1, line:22:1> line:4:8 struct stat definition
+|-FieldDecl 0x7fc42a06c830 <line:6:2, col:8> col:8 st_dev 'dev_t':'unsigned long long'
+|-FieldDecl 0x7fc42a06c888 <line:7:2, col:6> col:6 __st_dev_padding 'int'
+|-FieldDecl 0x7fc42a06c8e0 <line:8:2, col:7> col:7 __st_ino_truncated 'long'
+|-FieldDecl 0x7fc42a06c960 <line:9:2, col:9> col:9 st_mode 'mode_t':'unsigned int'
+|-FieldDecl 0x7fc42a06c9e0 <line:10:2, col:10> col:10 st_nlink 'nlink_t':'unsigned int'
+|-FieldDecl 0x7fc42a06ca60 <line:11:2, col:8> col:8 st_uid 'uid_t':'unsigned int'
+|-FieldDecl 0x7fc42a06cae0 <line:12:2, col:8> col:8 st_gid 'gid_t':'unsigned int'
+|-FieldDecl 0x7fc42a06cb38 <line:13:2, col:8> col:8 st_rdev 'dev_t':'unsigned long long'
+|-FieldDecl 0x7fc42a06cb90 <line:14:2, col:6> col:6 __st_rdev_padding 'int'
+|-FieldDecl 0x7fc42a06cc10 <line:15:2, col:8> col:8 st_size 'off_t':'long long'
+|-FieldDecl 0x7fc42a06cc90 <line:16:2, col:12> col:12 st_blksize 'blksize_t':'long'
+|-FieldDecl 0x7fc42a06cd10 <line:17:2, col:11> col:11 st_blocks 'blkcnt_t':'long long'
+|-FieldDecl 0x7fc42a06cd78 <line:18:2, col:18> col:18 st_atim 'struct timespec':'struct timespec'
+|-FieldDecl 0x7fc42a071a00 <line:19:2, col:18> col:18 st_mtim 'struct timespec':'struct timespec'
+|-FieldDecl 0x7fc42a071a68 <line:20:2, col:18> col:18 st_ctim 'struct timespec':'struct timespec'
+`-FieldDecl 0x7fc42a071ae0 <line:21:2, col:8> col:8 st_ino 'ino_t':'unsigned long long'
+
+Layout: <CGRecordLayout
+  LLVMType:%struct.stat = type { i64, i32, i32, i32, i32, i32, i32, i64, i32, i64, i32, i64, %struct.timespec, %struct.timespec, %struct.timespec, i64 }
+  IsZeroInitializable:1
+  BitFields:[
+]>
