@@ -23,63 +23,56 @@ package com.wrmsr.wava;
 // echo '#include <fcntl.h>' | bin/clang -dM -E -
 
 /*
-In [4]: import clang.cindex
-
-In [5]: clang.cindex
-Out[5]: <module 'clang.cindex' from 'clang/cindex.py'>
-
-In [6]: clang.cindex.Config
-Out[6]: <class clang.cindex.Config at 0x10e65a6d0>
-
-In [7]: clang.cindex.Config.set_library_path('/Users/spinlock/src/llvm/clang/build/lib/')
-
-In [8]: clang.cindex.Index.create()
-Out[8]: <clang.cindex.Index at 0x10e3fb210>
-
-In [9]: index.parse('/Users/spinlock/src/llvm/clang/build/a.c', ['-I', '/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include', '--target=wasm32'])
----------------------------------------------------------------------------
-NameError                                 Traceback (most recent call last)
-<ipython-input-9-76b1580c3a5c> in <module>()
-----> 1 index.parse('/Users/spinlock/src/llvm/clang/build/a.c', ['-I', '/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include', '--target=wasm32'])
-
-NameError: name 'index' is not defined
-
-In [10]: index = clang.cindex.Index.create()
-
-In [11]: index.parse('/Users/spinlock/src/llvm/clang/build/a.c', ['-I', '/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include', '--target=wasm32'])
-Out[11]: <clang.cindex.TranslationUnit at 0x10ed30890>
-
-In [12]: u = index.parse('/Users/spinlock/src/llvm/clang/build/a.c', ['-I', '/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include', '--target=wasm32'])
-
-In [13]: tu = u
-
-In [14]: tu.cursor
-Out[14]: <clang.cindex.Cursor at 0x10ebd0290>
-
-In [15]: type(tu.cursor)
-Out[15]: clang.cindex.Cursor
-
-In [16]: list(tu.cursor)
----------------------------------------------------------------------------
-TypeError                                 Traceback (most recent call last)
-<ipython-input-16-67f282ecaef0> in <module>()
-----> 1 list(tu.cursor)
-
-TypeError: 'Cursor' object is not iterable
-
-In [17]: tu.cursor.kind
-Out[17]: CursorKind.TRANSLATION_UNIT
-
-
 echo '#include <fcntl.h>' | bin/clang -I/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include --target=wasm32 -dM -E -
-
-
 
 functions
 structs
 enums
 constants
 defines
+
+https://stackoverflow.com/questions/1562074/how-do-i-show-the-value-of-a-define-at-compile-time
+
+0x200
+(-100)
+02000
+1
+(03|O_PATH)
+                            <---- yes a blank line
+unsigned short
+4.9406564584124654e-324
+2.2204460492503131e-16
+1.7976931348623157e+308
+2.2250738585072014e-308
+1.40129846e-45F
+1.19209290e-7F
+3.40282347e+38F
+\"hd\"
+2147483647
+long long int
+signed char
+9223372036854775807LL
+6.47517511943802511092443895822764655e-4966L
+4294967295U
+18446744073709551615ULL
+long long unsigned int
+\"4.2.1 Compatible Clang 4.0.0 (https://github.com/llvm-mirror/clang b305e4d9e02974c2f92723caa4a2dda3a092f99f) (https://github.com/llvm-mirror/llvm 86a6238dca2b84e17b036e898281378e2a0f0139)\"
+\"4.0.0 (https://github.com/llvm-mirror/clang b305e4d9e02974c2f92723caa4a2dda3a092f99f) (https://github.com/llvm-mirror/llvm 86a6238dca2b84e17b036e898281378e2a0f0139)\"
+
+(5 | (1<<8))
+(10 | (19<<8))
+((sqlite3_destructor_type)-1)
+
+
+va_arg(v,l) -> __builtin_va_arg(v,l)
+va_copy(d,s) -> __builtin_va_copy(d,s)
+va_end(v) -> __builtin_va_end(v)
+va_start(v,l) -> __builtin_va_start(v,l)
+
+
+https://github.com/antlr/grammars-v4/blob/master/cpp/CPP14.g4 ?
+https://github.com/javaparser/javaparser/tree/master/javaparser-core/src/main/java/com/github/javaparser/ast
+https://github.com/uklimaschewski/EvalEx
 */
 
 import com.wrmsr.wava.util.process.FinalizedProcess;
@@ -88,7 +81,15 @@ import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class TestClangRecordParser
 {
@@ -98,17 +99,75 @@ public class TestClangRecordParser
     {
         String[] argv = {
                 "/Users/spinlock/src/llvm/clang/build/bin/clang",
+                "-I/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include",
+                "--target=wasm32",
                 "-dM",
                 "-E",
                 "-"
         };
 
+        String src;
+        src = "#include <fcntl.h>\n";
+        src = new String(Files.readAllBytes(Paths.get("/Users/spinlock/src/llvm/clang/build/sqlite3.h")));
+
+        StringBuilder sb = new StringBuilder();
+        Map<String, String> dct = new LinkedHashMap<>();
+
         FinalizedProcessBuilder processBuilder = new FinalizedProcessBuilder(argv);
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         try (FinalizedProcess process = processBuilder.start()) {
-            process.getOutputStream().write("#include <fcntl.h>\n".getBytes("UTF-8"));
+            process.getOutputStream().write(src.getBytes());
             process.getOutputStream().close();
+            Scanner scanner = new Scanner(process.getInputStream());
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.startsWith("#define ")) {
+                    int ofs = line.indexOf(' ', 9);
+                    checkState(ofs > 0);
+                    String key = line.substring(8, ofs);
+                    String value = line.substring(ofs + 1);
+
+                    sb.append(line).append('\n');
+                    dct.put(key, value);
+                }
+            }
+            process.waitFor(10, TimeUnit.SECONDS);
+        }
+
+        String strMacro = "__" + UUID.randomUUID().toString().replace('-', '_');
+        checkState(!dct.containsKey(strMacro));
+        sb.append(String.format("#define %s_0(x) #x\n", strMacro));
+        sb.append(String.format("#define %s_1(x) %s_0(x)\n", strMacro, strMacro));
+        sb.append(String.format("#define %s(var) #var %s_1(var)\n", strMacro, strMacro));
+        for (String key : dct.keySet()) {
+//            sb.append(String.format("#pragma message(%s(%s))\n", strMacro, key));
+            sb.append(String.format("%s(%s)\n", strMacro, key));
+        }
+
+        argv = new String[] {
+                "/Users/spinlock/src/llvm/clang/build/bin/clang",
+                "-I/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include",
+                "--target=wasm32",
+                "-E",
+                "-"
+        };
+        processBuilder = new FinalizedProcessBuilder(argv);
+        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        try (FinalizedProcess process = processBuilder.start()) {
+            process.getOutputStream().write(sb.toString().getBytes());
+            process.getOutputStream().close();
+            Scanner scanner = new Scanner(process.getInputStream());
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.startsWith("\"")) {
+                    int pos = line.indexOf('\"', 1);
+                    checkState(pos > 0 && line.charAt(pos + 1) == ' ' && line.charAt(pos + 2) == '\"' && line.endsWith("\""));
+                    String key = line.substring(1, pos);
+                    String value = line.substring(pos + 3, line.length() - 1);
+                    System.out.println(key);
+                    System.out.println(value);
+                }
+            }
             process.waitFor(10, TimeUnit.SECONDS);
         }
     }

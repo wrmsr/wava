@@ -14,33 +14,53 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang;
 
-public interface CxCursor
+import java.util.Map;
+import java.util.function.IntSupplier;
+import java.util.stream.Stream;
+
+import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
+import static java.util.function.Function.identity;
+
+public enum CxTokenKind
+        implements IntSupplier
 {
-    boolean cursorEqual(CxCursor other);
+    /**
+     * \brief A token that contains some kind of punctuation.
+     */
+    Punctuation(0),
 
-    boolean cursorIsNull();
+    /**
+     * \brief A language keyword.
+     */
+    Keyword(1),
 
-    int cursorHash();
+    /**
+     * \brief An identifier (that is not a keyword).
+     */
+    Identifier(2),
 
-    CxCursorKind getKind();
+    /**
+     * \brief A numeric, string, or character literal.
+     */
+    Literal(3),
 
-    boolean visitChildren(CxCursorVisitor visitor);
+    /**
+     * \brief A comment.
+     */
+    Comment(4);
 
-    String getSpelling();
+    private final int value;
 
-    CxType getType();
+    CxTokenKind(int value)
+    {
+        this.value = value;
+    }
 
-    CxType getTypedefDeclUnderlyingType();
+    @Override
+    public int getAsInt()
+    {
+        return value;
+    }
 
-    CxType getEnumDeclIntegerType();
-
-    long getEnumConstantDeclValue();
-
-    long getEnumConstantDeclUnsignedValue();
-
-    int getFieldDeclBitWidth();
-
-    int getNumArguments();
-
-    CxCursor getArgument(int i);
+    public static final Map<Integer, CxTokenKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxTokenKind::getAsInt, identity()));
 }

@@ -14,33 +14,36 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang;
 
-public interface CxCursor
+import java.util.Map;
+import java.util.function.IntSupplier;
+import java.util.stream.Stream;
+
+import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
+import static java.util.function.Function.identity;
+
+public enum CxEvalResultKind
+        implements IntSupplier
 {
-    boolean cursorEqual(CxCursor other);
+    Int(1),
+    Float(2),
+    ObjCStrLiteral(3),
+    StrLiteral(4),
+    CFStr(5),
+    Other(6),
+    UnExposed(0);
 
-    boolean cursorIsNull();
+    private final int value;
 
-    int cursorHash();
+    CxEvalResultKind(int value)
+    {
+        this.value = value;
+    }
 
-    CxCursorKind getKind();
+    @Override
+    public int getAsInt()
+    {
+        return value;
+    }
 
-    boolean visitChildren(CxCursorVisitor visitor);
-
-    String getSpelling();
-
-    CxType getType();
-
-    CxType getTypedefDeclUnderlyingType();
-
-    CxType getEnumDeclIntegerType();
-
-    long getEnumConstantDeclValue();
-
-    long getEnumConstantDeclUnsignedValue();
-
-    int getFieldDeclBitWidth();
-
-    int getNumArguments();
-
-    CxCursor getArgument(int i);
+    public static final Map<Integer, CxEvalResultKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxEvalResultKind::getAsInt, identity()));
 }

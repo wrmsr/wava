@@ -14,31 +14,24 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.kenai.jffi.Type;
-import com.wrmsr.wava.clang.CxString;
-import com.wrmsr.wava.clang.CxType;
+import com.wrmsr.wava.clang.CxSourceLocation;
 
 import static com.kenai.jffi.Array.newArray;
 import static com.kenai.jffi.Struct.newStruct;
 
-final class JffiCxType
+final class JffiCxSourceLocation
         extends JffiStruct
-        implements CxType
+        implements CxSourceLocation
 {
-    static final Descriptor<JffiCxType> DESCRIPTOR = new Descriptor<>(
-            JffiCxType.class,
-            JffiCxType::new,
+    static final Descriptor<JffiCxSourceLocation> DESCRIPTOR = new Descriptor<>(
+            JffiCxSourceLocation.class,
+            JffiCxSourceLocation::new,
             newStruct(
-                    Type.UINT32,
-                    newArray(Type.POINTER, 2)));
+                    newArray(Type.POINTER, 2),
+                    Type.UINT32));
 
-    public JffiCxType(JffiCxRuntime runtime, byte[] struct)
+    public JffiCxSourceLocation(JffiCxRuntime runtime, byte[] struct)
     {
         super(runtime, struct);
-    }
-
-    @Override
-    public String getSpelling()
-    {
-        return CxString.unwrap(runtime.getLibClang().clang_getTypeSpelling(this));
     }
 }

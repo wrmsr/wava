@@ -24,7 +24,9 @@ final class JffiCxPointers
     }
 
     static final List<JffiPointer.Descriptor<?>> DESCRIPTORS = ImmutableList.<JffiPointer.Descriptor<?>>builder()
+            .add(JffiCxEvalResult.DESCRIPTOR)
             .add(JffiCxIndex.DESCRIPTOR)
+            .add(JffiCxModule.DESCRIPTOR)
             .add(JffiCxTranslationUnit.DESCRIPTOR)
             .build();
 }

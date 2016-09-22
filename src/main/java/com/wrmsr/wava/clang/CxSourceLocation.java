@@ -14,33 +14,6 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang;
 
-public interface CxCursor
+public interface CxSourceLocation
 {
-    boolean cursorEqual(CxCursor other);
-
-    boolean cursorIsNull();
-
-    int cursorHash();
-
-    CxCursorKind getKind();
-
-    boolean visitChildren(CxCursorVisitor visitor);
-
-    String getSpelling();
-
-    CxType getType();
-
-    CxType getTypedefDeclUnderlyingType();
-
-    CxType getEnumDeclIntegerType();
-
-    long getEnumConstantDeclValue();
-
-    long getEnumConstantDeclUnsignedValue();
-
-    int getFieldDeclBitWidth();
-
-    int getNumArguments();
-
-    CxCursor getArgument(int i);
 }

@@ -25,7 +25,10 @@ final class JffiCxStructs
 
     static final List<JffiStruct.Descriptor<?>> DESCRIPTORS = ImmutableList.<JffiStruct.Descriptor<?>>builder()
             .add(JffiCxCursor.DESCRIPTOR)
+            .add(JffiCxSourceLocation.DESCRIPTOR)
+            .add(JffiCxSourceRange.DESCRIPTOR)
             .add(JffiCxString.DESCRIPTOR)
+            .add(JffiCxToken.DESCRIPTOR)
             .add(JffiCxType.DESCRIPTOR)
             .build();
 }

@@ -14,33 +14,41 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang;
 
-public interface CxCursor
+import java.util.Map;
+import java.util.function.IntSupplier;
+import java.util.stream.Stream;
+
+import static com.wrmsr.wava.util.collect.MoreCollectors.toImmutableMap;
+import static java.util.function.Function.identity;
+
+public enum CxRefQualifierKind
+        implements IntSupplier
 {
-    boolean cursorEqual(CxCursor other);
+    /**
+     * \brief No ref-qualifier was provided.
+     */
+    None(0),
+    /**
+     * \brief An lvalue ref-qualifier was provided (\c &).
+     */
+    LValue(1),
+    /**
+     * \brief An rvalue ref-qualifier was provided (\c &&).
+     */
+    RValue(2);
 
-    boolean cursorIsNull();
+    private final int value;
 
-    int cursorHash();
+    CxRefQualifierKind(int value)
+    {
+        this.value = value;
+    }
 
-    CxCursorKind getKind();
+    @Override
+    public int getAsInt()
+    {
+        return value;
+    }
 
-    boolean visitChildren(CxCursorVisitor visitor);
-
-    String getSpelling();
-
-    CxType getType();
-
-    CxType getTypedefDeclUnderlyingType();
-
-    CxType getEnumDeclIntegerType();
-
-    long getEnumConstantDeclValue();
-
-    long getEnumConstantDeclUnsignedValue();
-
-    int getFieldDeclBitWidth();
-
-    int getNumArguments();
-
-    CxCursor getArgument(int i);
+    public static final Map<Integer, CxRefQualifierKind> BY_VALUE = Stream.of(values()).collect(toImmutableMap(CxRefQualifierKind::getAsInt, identity()));
 }

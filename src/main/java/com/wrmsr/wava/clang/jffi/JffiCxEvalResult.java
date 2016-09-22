@@ -13,13 +13,29 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.wrmsr.wava.clang.CxChildVisitResult;
+import com.wrmsr.wava.clang.CxEvalResult;
 
-import static com.wrmsr.wava.clang.jffi.JffiUtils.Address;
-
-@SuppressWarnings("WeakerAccess")
-@FunctionalInterface
-public interface JffiCxCursorVisitor
+final class JffiCxEvalResult
+        extends JffiPointer
+        implements CxEvalResult
 {
-    CxChildVisitResult visit(JffiCxCursor cursor, JffiCxCursor parent, Address userData);
+    static final Descriptor<JffiCxEvalResult> DESCRIPTOR = new Descriptor<>(
+            JffiCxEvalResult.class,
+            JffiCxEvalResult::new);
+
+    private boolean isDisposed = false;
+
+    JffiCxEvalResult(JffiCxRuntime runtime, long address)
+    {
+        super(runtime, address);
+    }
+
+    @Override
+    public void close()
+            throws Exception
+    {
+        if (!isDisposed) {
+            isDisposed = true;
+        }
+    }
 }

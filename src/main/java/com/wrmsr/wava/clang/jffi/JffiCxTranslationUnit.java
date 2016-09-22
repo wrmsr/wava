@@ -16,8 +16,7 @@ package com.wrmsr.wava.clang.jffi;
 import com.wrmsr.wava.clang.CxCursor;
 import com.wrmsr.wava.clang.CxTranslationUnit;
 
-@SuppressWarnings("WeakerAccess")
-public final class JffiCxTranslationUnit
+final class JffiCxTranslationUnit
         extends JffiPointer
         implements CxTranslationUnit
 {

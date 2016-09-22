@@ -22,8 +22,7 @@ import com.wrmsr.wava.clang.CxTranslationUnitFlags;
 import java.util.List;
 import java.util.Set;
 
-@SuppressWarnings("WeakerAccess")
-public final class JffiCxIndex
+final class JffiCxIndex
         extends JffiPointer
         implements CxIndex
 {

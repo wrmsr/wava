@@ -13,13 +13,25 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.wrmsr.wava.clang.CxChildVisitResult;
+import com.kenai.jffi.Type;
+import com.wrmsr.wava.clang.CxToken;
 
-import static com.wrmsr.wava.clang.jffi.JffiUtils.Address;
+import static com.kenai.jffi.Array.newArray;
+import static com.kenai.jffi.Struct.newStruct;
 
-@SuppressWarnings("WeakerAccess")
-@FunctionalInterface
-public interface JffiCxCursorVisitor
+final class JffiCxToken
+        extends JffiStruct
+        implements CxToken
 {
-    CxChildVisitResult visit(JffiCxCursor cursor, JffiCxCursor parent, Address userData);
+    static final Descriptor<JffiCxToken> DESCRIPTOR = new Descriptor<>(
+            JffiCxToken.class,
+            JffiCxToken::new,
+            newStruct(
+                    newArray(Type.UINT32, 4),
+                    Type.POINTER));
+
+    JffiCxToken(JffiCxRuntime runtime, byte[] struct)
+    {
+        super(runtime, struct);
+    }
 }

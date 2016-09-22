@@ -20,14 +20,11 @@ import com.wrmsr.wava.clang.CxCursorVisitor;
 import com.wrmsr.wava.clang.CxString;
 import com.wrmsr.wava.clang.CxType;
 
-import java.math.BigInteger;
-
 import static com.kenai.jffi.Array.newArray;
 import static com.kenai.jffi.Struct.newStruct;
 import static com.wrmsr.wava.clang.jffi.JffiUtils.Address;
 
-@SuppressWarnings("WeakerAccess")
-public final class JffiCxCursor
+final class JffiCxCursor
         extends JffiStruct
         implements CxCursor
 {
@@ -99,13 +96,13 @@ public final class JffiCxCursor
     }
 
     @Override
-    public BigInteger getEnumConstantDeclValue()
+    public long getEnumConstantDeclValue()
     {
         return runtime.getLibClang().clang_getEnumConstantDeclValue(this);
     }
 
     @Override
-    public BigInteger getEnumConstantDeclUnsignedValue()
+    public long getEnumConstantDeclUnsignedValue()
     {
         return runtime.getLibClang().clang_getEnumConstantDeclUnsignedValue(this);
     }

@@ -13,13 +13,18 @@
  */
 package com.wrmsr.wava.clang.jffi;
 
-import com.wrmsr.wava.clang.CxChildVisitResult;
+import com.wrmsr.wava.clang.CxModule;
 
-import static com.wrmsr.wava.clang.jffi.JffiUtils.Address;
-
-@SuppressWarnings("WeakerAccess")
-@FunctionalInterface
-public interface JffiCxCursorVisitor
+final class JffiCxModule
+        extends JffiPointer
+        implements CxModule
 {
-    CxChildVisitResult visit(JffiCxCursor cursor, JffiCxCursor parent, Address userData);
+    static final Descriptor<JffiCxModule> DESCRIPTOR = new Descriptor<>(
+            JffiCxModule.class,
+            JffiCxModule::new);
+
+    JffiCxModule(JffiCxRuntime runtime, long address)
+    {
+        super(runtime, address);
+    }
 }

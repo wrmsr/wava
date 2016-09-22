@@ -19,9 +19,13 @@ import com.wrmsr.wava.clang.CxChildVisitResult;
 import com.wrmsr.wava.clang.CxCursorKind;
 import com.wrmsr.wava.clang.CxCxxAccessSpecifier;
 import com.wrmsr.wava.clang.CxError;
+import com.wrmsr.wava.clang.CxEvalResultKind;
 import com.wrmsr.wava.clang.CxLinkageKind;
+import com.wrmsr.wava.clang.CxNameRefFlags;
+import com.wrmsr.wava.clang.CxRefQualifierKind;
 import com.wrmsr.wava.clang.CxStorageClass;
 import com.wrmsr.wava.clang.CxTemplateArgumentKind;
+import com.wrmsr.wava.clang.CxTokenKind;
 import com.wrmsr.wava.clang.CxTranslationUnitFlags;
 import com.wrmsr.wava.clang.CxTypeKind;
 import com.wrmsr.wava.clang.CxTypeLayoutError;
@@ -80,9 +84,24 @@ final class JffiCxEnums
                             CxError.BY_VALUE::get))
             .add(
                     new Descriptor<>(
+                            CxEvalResultKind.class,
+                            CxEvalResultKind::getAsInt,
+                            CxEvalResultKind.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
                             CxLinkageKind.class,
                             CxLinkageKind::getAsInt,
                             CxLinkageKind.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxNameRefFlags.class,
+                            CxNameRefFlags::getAsInt,
+                            CxNameRefFlags.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxRefQualifierKind.class,
+                            CxRefQualifierKind::getAsInt,
+                            CxRefQualifierKind.BY_VALUE::get))
             .add(
                     new Descriptor<>(
                             CxStorageClass.class,
@@ -93,6 +112,11 @@ final class JffiCxEnums
                             CxTemplateArgumentKind.class,
                             CxTemplateArgumentKind::getAsInt,
                             CxTemplateArgumentKind.BY_VALUE::get))
+            .add(
+                    new Descriptor<>(
+                            CxTokenKind.class,
+                            CxTokenKind::getAsInt,
+                            CxTokenKind.BY_VALUE::get))
             .add(
                     new Descriptor<>(
                             CxTranslationUnitFlags.class,
