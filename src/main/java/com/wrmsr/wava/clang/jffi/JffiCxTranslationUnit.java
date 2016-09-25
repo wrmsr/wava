@@ -32,13 +32,24 @@ final class JffiCxTranslationUnit
     }
 
     @Override
-    public void close()
+    public synchronized void close()
             throws Exception
     {
         if (!isDisposed) {
-            // FIXME fuk
             runtime.getLibClang().clang_disposeTranslationUnit(this);
             isDisposed = true;
+        }
+    }
+
+    @Override
+    protected void finalize()
+            throws Throwable
+    {
+        try {
+            close();
+        }
+        finally {
+            super.finalize();
         }
     }
 

@@ -286,6 +286,8 @@ abstract class JffiCxRuntime
         String clang_EvalResult_getAsStr(JffiCxEvalResult evalResult);
 
         void clang_EvalResult_dispose(JffiCxEvalResult evalResult);
+
+        // void clang_toggleCrashRecovery(int enabled);
     }
 
     abstract LibClang getLibClang();
@@ -296,9 +298,12 @@ abstract class JffiCxRuntime
         return CxString.unwrap(getLibClang().clang_getClangVersion());
     }
 
+    abstract void disableCrashHandler();
+
     @Override
     public CxIndex createIndex(int excludeDeclarationsFromPCH, int displayDiagnostics)
     {
+        disableCrashHandler();
         return getLibClang().clang_createIndex(excludeDeclarationsFromPCH, displayDiagnostics);
     }
 }

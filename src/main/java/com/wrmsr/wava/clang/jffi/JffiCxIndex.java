@@ -21,6 +21,10 @@ import com.wrmsr.wava.clang.api.CxTranslationUnitFlags;
 
 import java.util.List;
 import java.util.Set;
+import java.util.WeakHashMap;
+
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.newSetFromMap;
 
 final class JffiCxIndex
         extends JffiPointer
@@ -32,32 +36,55 @@ final class JffiCxIndex
 
     private boolean isDisposed = false;
 
+    private final Set<CxTranslationUnit> translationUnits = newSetFromMap(new WeakHashMap<>());
+
     JffiCxIndex(JffiCxRuntime runtime, long address)
     {
         super(runtime, address);
     }
 
     @Override
-    public void close()
+    public synchronized void close()
             throws Exception
     {
         if (!isDisposed) {
-            // FIXME fuk
+            for (CxTranslationUnit tu : translationUnits) {
+                tu.close();
+            }
+            translationUnits.clear();
             runtime.getLibClang().clang_disposeIndex(this);
             isDisposed = true;
         }
     }
 
     @Override
-    public CxTranslationUnit createTranslationUnit(String astFilename)
+    protected void finalize()
+            throws Throwable
     {
-        return runtime.getLibClang().clang_createTranslationUnit(this, astFilename);
+        try {
+            close();
+        }
+        finally {
+            super.finalize();
+        }
     }
 
     @Override
-    public CxTranslationUnit parseTranslationUnit(String sourceFilename, List<String> commandLineArgs, Set<CxTranslationUnitFlags> options)
+    public synchronized CxTranslationUnit createTranslationUnit(String astFilename)
+    {
+        checkState(!isDisposed);
+        CxTranslationUnit tu = runtime.getLibClang().clang_createTranslationUnit(this, astFilename);
+        if (tu != null) {
+            translationUnits.add(tu);
+        }
+        return tu;
+    }
+
+    @Override
+    public synchronized CxTranslationUnit parseTranslationUnit(String sourceFilename, List<String> commandLineArgs, Set<CxTranslationUnitFlags> options)
             throws CxException
     {
+        checkState(!isDisposed);
         JffiCxTranslationUnit[] out = new JffiCxTranslationUnit[1];
         String[] commandLineArgsArray = commandLineArgs.stream().toArray(String[]::new);
         int optionsInt = options.stream().map(CxTranslationUnitFlags::getAsInt).reduce(0, (l, r) -> l | r);
@@ -65,6 +92,10 @@ final class JffiCxIndex
         if (error != CxError.Success) {
             throw new CxException(error);
         }
-        return out[0];
+        CxTranslationUnit tu = out[0];
+        if (tu != null) {
+            translationUnits.add(tu);
+        }
+        return tu;
     }
 }

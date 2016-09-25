@@ -4,7 +4,11 @@
   set(LLVM_CONFIG "/Users/spinlock/src/llvm/llvm/build/bin/llvm-config")
 
 
+https://stackoverflow.com/questions/34479428/lldb-in-android-studio-select-frame-does-not-work
+https://stackoverflow.com/questions/16136258/how-can-i-automate-this-sequence-of-lldb-commands
 
+
+https://www.unknowncheats.me/forum/general-programming-and-reversing/109735-mac-osx-memory-editing.html
 
 ./configure --with-debug-level=slowdebug --with-jobs=8 --with-jvm-variants=server --disable-warnings-as-errors
 CONF=macosx-x86_64-normal-server-slowdebug make images

@@ -18,6 +18,8 @@ import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
 import com.wrmsr.wava.clang.api.CxRuntime;
+import com.wrmsr.wava.util.POSIXUtils;
+import jnr.posix.POSIX;
 
 public final class JffiClangApi
 {
@@ -27,10 +29,11 @@ public final class JffiClangApi
 
     public static CxRuntime create(String libraryPath)
     {
+        POSIX posix = POSIXUtils.getPOSIX();
         Invoker invoker = Invoker.getInstance();
         MemoryIO memory = MemoryIO.getCheckedInstance();
         ClosureManager closureManager = ClosureManager.getInstance();
         Library library = JffiUtils.openLibrary(libraryPath);
-        return new JffiCxRuntimeImpl(invoker, memory, closureManager, library);
+        return new JffiCxRuntimeImpl(posix, invoker, memory, closureManager, library);
     }
 }

@@ -37,6 +37,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>4.2.1</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.organicdesign</groupId>
             <artifactId>UncleJim</artifactId>
             <version>1.0.3</version>

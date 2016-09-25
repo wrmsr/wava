@@ -26,6 +26,7 @@ import com.kenai.jffi.Library;
 import com.kenai.jffi.MemoryIO;
 import com.kenai.jffi.Type;
 import com.wrmsr.wava.util.Buffers;
+import jnr.posix.POSIX;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
@@ -58,6 +59,9 @@ import static java.util.Objects.requireNonNull;
 final class JffiCxRuntimeImpl
         extends JffiCxRuntime
 {
+    static final String DISABLE_CRASH_HANDLER_ENVVAR = "LIBCLANG_DISABLE_CRASH_RECOVERY";
+
+    final POSIX posix;
     final Invoker invoker;
     final MemoryIO memoryIO;
     final ClosureManager closureManager;
@@ -67,8 +71,9 @@ final class JffiCxRuntimeImpl
 
     private final List<TypeAdapter.Factory> typeAdapterFactories = new ArrayList<>();
 
-    JffiCxRuntimeImpl(Invoker invoker, MemoryIO memoryIO, ClosureManager closureManager, Library library)
+    JffiCxRuntimeImpl(POSIX posix, Invoker invoker, MemoryIO memoryIO, ClosureManager closureManager, Library library)
     {
+        this.posix = requireNonNull(posix);
         this.invoker = requireNonNull(invoker);
         this.memoryIO = requireNonNull(memoryIO);
         this.closureManager = requireNonNull(closureManager);
@@ -77,7 +82,8 @@ final class JffiCxRuntimeImpl
         typeAdapterFactories.addAll(buildDefaultTypeAdapterFactories());
 
         libClang = LibClang.class.cast(
-                Proxy.newProxyInstance(LibClang.class.getClassLoader(),
+                Proxy.newProxyInstance(
+                        LibClang.class.getClassLoader(),
                         new Class[] {LibClang.class},
                         new NativeInvocationHandler()));
     }
@@ -92,6 +98,13 @@ final class JffiCxRuntimeImpl
     public void close()
             throws Exception
     {
+    }
+
+    @Override
+    void disableCrashHandler()
+    {
+        // https://reviews.llvm.org/D23662 :(
+        posix.setenv(DISABLE_CRASH_HANDLER_ENVVAR, "1", 1);
     }
 
     private interface TypeAdapter
@@ -567,6 +580,7 @@ final class JffiCxRuntimeImpl
             }
 
             TypeAdapter returnType = getTypeAdapter(method.getReturnType());
+
             List<TypeAdapter> parameterTypes = Stream.of(method.getParameterTypes())
                     .map(JffiCxRuntimeImpl.this::getTypeAdapter)
                     .collect(toImmutableList());

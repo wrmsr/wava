@@ -112,6 +112,8 @@ hotspot/src/share/vm/runtime/globals.hpp
 -XX:CompileThreshold=10
 -Xmx4g
 -Xms4g
+
+http://hg.openjdk.java.net/jdk7/jdk7/hotspot/file/tip/src/share/vm/runtime/synchronizer.cpp#l530
 */
 
 package com.wrmsr.wava.util;
