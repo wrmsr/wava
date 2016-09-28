@@ -180,187 +180,187 @@ final class JffiCxCursor
     }
 
     @Override
-    public String getDeclObjCTypeEncoding(CxCursor cursor)
+    public String getDeclObjCTypeEncoding()
     {
         return CxString.unwrap(runtime.getLibClang().clang_getDeclObjCTypeEncoding(this));
     }
 
     @Override
-    public CxType getCursorResultType(CxCursor cursor)
+    public CxType getCursorResultType()
     {
         return runtime.getLibClang().clang_getCursorResultType(this);
     }
 
     @Override
-    public long getOffsetOfField(CxCursor cursor)
+    public long getOffsetOfField()
     {
         return runtime.getLibClang().clang_Cursor_getOffsetOfField(this);
     }
 
     @Override
-    public boolean isAnonymous(CxCursor cursor)
+    public boolean isAnonymous()
     {
         return runtime.getLibClang().clang_Cursor_isAnonymous(this);
     }
 
     @Override
-    public boolean isBitField(CxCursor cursor)
+    public boolean isBitField()
     {
         return runtime.getLibClang().clang_Cursor_isBitField(this);
     }
 
     @Override
-    public boolean isVirtualBase(CxCursor cursor)
+    public boolean isVirtualBase()
     {
         return runtime.getLibClang().clang_isVirtualBase(this);
     }
 
     @Override
-    public CxCxxAccessSpecifier getCXXAccessSpecifier(CxCursor cursor)
+    public CxCxxAccessSpecifier getCXXAccessSpecifier()
     {
         return runtime.getLibClang().clang_getCXXAccessSpecifier(this);
     }
 
     @Override
-    public CxStorageClass getStorageClass(CxCursor cursor)
+    public CxStorageClass getStorageClass()
     {
         return runtime.getLibClang().clang_Cursor_getStorageClass(this);
     }
 
     @Override
-    public int getNumOverloadedDecls(CxCursor cursor)
+    public int getNumOverloadedDecls()
     {
         return runtime.getLibClang().clang_getNumOverloadedDecls(this);
     }
 
     @Override
-    public CxCursor getOverloadedDecl(CxCursor cursor, int index)
+    public CxCursor getOverloadedDecl(int index)
     {
         return runtime.getLibClang().clang_getOverloadedDecl(this, index);
     }
 
     @Override
-    public CxType getIBOutletCollectionType(CxCursor cursor)
+    public CxType getIBOutletCollectionType()
     {
         return runtime.getLibClang().clang_getIBOutletCollectionType(this);
     }
 
     @Override
-    public String getCursorUSR(CxCursor cursor)
+    public String getCursorUSR()
     {
         return CxString.unwrap(runtime.getLibClang().clang_getCursorUSR(this));
     }
 
     @Override
-    public String getCursorSpelling(CxCursor cursor)
+    public String getCursorSpelling()
     {
         return CxString.unwrap(runtime.getLibClang().clang_getCursorSpelling(this));
     }
 
     @Override
-    public CxSourceRange getSpellingNameRange(CxCursor cursor, int pieceIndex, int options)
+    public CxSourceRange getSpellingNameRange(int pieceIndex, int options)
     {
         return runtime.getLibClang().clang_Cursor_getSpellingNameRange(this, pieceIndex, options);
     }
 
     @Override
-    public String getCursorDisplayName(CxCursor cursor)
+    public String getCursorDisplayName()
     {
         return CxString.unwrap(runtime.getLibClang().clang_getCursorDisplayName(this));
     }
 
     @Override
-    public CxCursor getCursorReferenced(CxCursor cursor)
+    public CxCursor getCursorReferenced()
     {
         return runtime.getLibClang().clang_getCursorReferenced(this);
     }
 
     @Override
-    public CxCursor getCursorDefinition(CxCursor cursor)
+    public CxCursor getCursorDefinition()
     {
         return runtime.getLibClang().clang_getCursorDefinition(this);
     }
 
     @Override
-    public boolean isCursorDefinition(CxCursor cursor)
+    public boolean isCursorDefinition()
     {
         return runtime.getLibClang().clang_isCursorDefinition(this);
     }
 
     @Override
-    public CxCursor getCanonicalCursor(CxCursor cursor)
+    public CxCursor getCanonicalCursor()
     {
         return runtime.getLibClang().clang_getCanonicalCursor(this);
     }
 
     @Override
-    public int getObjCSelectorIndex(CxCursor cursor)
+    public int getObjCSelectorIndex()
     {
         return runtime.getLibClang().clang_Cursor_getObjCSelectorIndex(this);
     }
 
     @Override
-    public boolean isDynamicCall(CxCursor cursor)
+    public boolean isDynamicCall()
     {
         return runtime.getLibClang().clang_Cursor_isDynamicCall(this);
     }
 
     @Override
-    public CxType getReceiverType(CxCursor cursor)
+    public CxType getReceiverType()
     {
         return runtime.getLibClang().clang_Cursor_getReceiverType(this);
     }
 
     @Override
-    public CxSourceRange getCommentRange(CxCursor cursor)
+    public CxSourceRange getCommentRange()
     {
         return runtime.getLibClang().clang_Cursor_getCommentRange(this);
     }
 
     @Override
-    public String getRawCommentText(CxCursor cursor)
+    public String getRawCommentText()
     {
         return CxString.unwrap(runtime.getLibClang().clang_Cursor_getRawCommentText(this));
     }
 
     @Override
-    public String getBriefCommentText(CxCursor cursor)
+    public String getBriefCommentText()
     {
         return CxString.unwrap(runtime.getLibClang().clang_Cursor_getBriefCommentText(this));
     }
 
     @Override
-    public String getMangling(CxCursor cursor)
+    public String getMangling()
     {
         return CxString.unwrap(runtime.getLibClang().clang_Cursor_getMangling(this));
     }
 
     @Override
-    public CxModule getModule(CxCursor cursor)
+    public CxModule getModule()
     {
         return runtime.getLibClang().clang_Cursor_getModule(this);
     }
 
     @Override
-    public CxCursorKind getTemplateCursorKind(CxCursor cursor)
+    public CxCursorKind getTemplateCursorKind()
     {
         return runtime.getLibClang().clang_getTemplateCursorKind(this);
     }
 
     @Override
-    public CxCursor getSpecializedCursorTemplate(CxCursor cursor)
+    public CxCursor getSpecializedCursorTemplate()
     {
         return runtime.getLibClang().clang_getSpecializedCursorTemplate(this);
     }
 
     @Override
-    public CxSourceRange getCursorReferenceNameRange(CxCursor cursor, int nameFlags, int pieceIndex)
+    public CxSourceRange getCursorReferenceNameRange(int nameFlags, int pieceIndex)
     {
         return runtime.getLibClang().clang_getCursorReferenceNameRange(this, nameFlags, pieceIndex);
     }
 
     @Override
-    public CxEvalResult evaluate(CxCursor cursor)
+    public CxEvalResult evaluate()
     {
         return runtime.getLibClang().clang_Cursor_Evaluate(this);
     }

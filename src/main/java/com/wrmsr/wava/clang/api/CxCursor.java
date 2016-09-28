@@ -60,65 +60,65 @@ public interface CxCursor
 
     boolean isFunctionInlined();
 
-    String getDeclObjCTypeEncoding(CxCursor cursor);
+    String getDeclObjCTypeEncoding();
 
-    CxType getCursorResultType(CxCursor cursor);
+    CxType getCursorResultType();
 
-    long getOffsetOfField(CxCursor cursor);
+    long getOffsetOfField();
 
-    boolean isAnonymous(CxCursor cursor);
+    boolean isAnonymous();
 
-    boolean isBitField(CxCursor cursor);
+    boolean isBitField();
 
-    boolean isVirtualBase(CxCursor cursor);
+    boolean isVirtualBase();
 
-    CxCxxAccessSpecifier getCXXAccessSpecifier(CxCursor cursor);
+    CxCxxAccessSpecifier getCXXAccessSpecifier();
 
-    CxStorageClass getStorageClass(CxCursor cursor);
+    CxStorageClass getStorageClass();
 
-    int getNumOverloadedDecls(CxCursor cursor);
+    int getNumOverloadedDecls();
 
-    CxCursor getOverloadedDecl(CxCursor cursor, int index);
+    CxCursor getOverloadedDecl(int index);
 
-    CxType getIBOutletCollectionType(CxCursor cursor);
+    CxType getIBOutletCollectionType();
 
-    String getCursorUSR(CxCursor cursor);
+    String getCursorUSR();
 
-    String getCursorSpelling(CxCursor cursor);
+    String getCursorSpelling();
 
-    CxSourceRange getSpellingNameRange(CxCursor cursor, int pieceIndex, int options);
+    CxSourceRange getSpellingNameRange(int pieceIndex, int options);
 
-    String getCursorDisplayName(CxCursor cursor);
+    String getCursorDisplayName();
 
-    CxCursor getCursorReferenced(CxCursor cursor);
+    CxCursor getCursorReferenced();
 
-    CxCursor getCursorDefinition(CxCursor cursor);
+    CxCursor getCursorDefinition();
 
-    boolean isCursorDefinition(CxCursor cursor);
+    boolean isCursorDefinition();
 
-    CxCursor getCanonicalCursor(CxCursor cursor);
+    CxCursor getCanonicalCursor();
 
-    int getObjCSelectorIndex(CxCursor cursor);
+    int getObjCSelectorIndex();
 
-    boolean isDynamicCall(CxCursor cursor);
+    boolean isDynamicCall();
 
-    CxType getReceiverType(CxCursor cursor);
+    CxType getReceiverType();
 
-    CxSourceRange getCommentRange(CxCursor cursor);
+    CxSourceRange getCommentRange();
 
-    String getRawCommentText(CxCursor cursor);
+    String getRawCommentText();
 
-    String getBriefCommentText(CxCursor cursor);
+    String getBriefCommentText();
 
-    String getMangling(CxCursor cursor);
+    String getMangling();
 
-    CxModule getModule(CxCursor cursor);
+    CxModule getModule();
 
-    CxCursorKind getTemplateCursorKind(CxCursor cursor);
+    CxCursorKind getTemplateCursorKind();
 
-    CxCursor getSpecializedCursorTemplate(CxCursor cursor);
+    CxCursor getSpecializedCursorTemplate();
 
-    CxSourceRange getCursorReferenceNameRange(CxCursor cursor, int nameFlags, int pieceIndex);
+    CxSourceRange getCursorReferenceNameRange(int nameFlags, int pieceIndex);
 
-    CxEvalResult evaluate(CxCursor cursor);
+    CxEvalResult evaluate();
 }
