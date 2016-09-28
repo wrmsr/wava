@@ -180,9 +180,9 @@ final class JffiCxCursor
     }
 
     @Override
-    public CxString getDeclObjCTypeEncoding(CxCursor cursor)
+    public String getDeclObjCTypeEncoding(CxCursor cursor)
     {
-        return runtime.getLibClang().clang_getDeclObjCTypeEncoding(this);
+        return CxString.unwrap(runtime.getLibClang().clang_getDeclObjCTypeEncoding(this));
     }
 
     @Override
@@ -246,15 +246,15 @@ final class JffiCxCursor
     }
 
     @Override
-    public CxString getCursorUSR(CxCursor cursor)
+    public String getCursorUSR(CxCursor cursor)
     {
-        return runtime.getLibClang().clang_getCursorUSR(this);
+        return CxString.unwrap(runtime.getLibClang().clang_getCursorUSR(this));
     }
 
     @Override
-    public CxString getCursorSpelling(CxCursor cursor)
+    public String getCursorSpelling(CxCursor cursor)
     {
-        return runtime.getLibClang().clang_getCursorSpelling(this);
+        return CxString.unwrap(runtime.getLibClang().clang_getCursorSpelling(this));
     }
 
     @Override
@@ -264,9 +264,9 @@ final class JffiCxCursor
     }
 
     @Override
-    public CxString getCursorDisplayName(CxCursor cursor)
+    public String getCursorDisplayName(CxCursor cursor)
     {
-        return runtime.getLibClang().clang_getCursorDisplayName(this);
+        return CxString.unwrap(runtime.getLibClang().clang_getCursorDisplayName(this));
     }
 
     @Override
@@ -318,21 +318,21 @@ final class JffiCxCursor
     }
 
     @Override
-    public CxString getRawCommentText(CxCursor cursor)
+    public String getRawCommentText(CxCursor cursor)
     {
-        return runtime.getLibClang().clang_Cursor_getRawCommentText(this);
+        return CxString.unwrap(runtime.getLibClang().clang_Cursor_getRawCommentText(this));
     }
 
     @Override
-    public CxString getBriefCommentText(CxCursor cursor)
+    public String getBriefCommentText(CxCursor cursor)
     {
-        return runtime.getLibClang().clang_Cursor_getBriefCommentText(this);
+        return CxString.unwrap(runtime.getLibClang().clang_Cursor_getBriefCommentText(this));
     }
 
     @Override
-    public CxString getMangling(CxCursor cursor)
+    public String getMangling(CxCursor cursor)
     {
-        return runtime.getLibClang().clang_Cursor_getMangling(this);
+        return CxString.unwrap(runtime.getLibClang().clang_Cursor_getMangling(this));
     }
 
     @Override

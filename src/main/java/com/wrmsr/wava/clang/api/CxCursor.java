@@ -60,7 +60,7 @@ public interface CxCursor
 
     boolean isFunctionInlined();
 
-    CxString getDeclObjCTypeEncoding(CxCursor cursor);
+    String getDeclObjCTypeEncoding(CxCursor cursor);
 
     CxType getCursorResultType(CxCursor cursor);
 
@@ -82,13 +82,13 @@ public interface CxCursor
 
     CxType getIBOutletCollectionType(CxCursor cursor);
 
-    CxString getCursorUSR(CxCursor cursor);
+    String getCursorUSR(CxCursor cursor);
 
-    CxString getCursorSpelling(CxCursor cursor);
+    String getCursorSpelling(CxCursor cursor);
 
     CxSourceRange getSpellingNameRange(CxCursor cursor, int pieceIndex, int options);
 
-    CxString getCursorDisplayName(CxCursor cursor);
+    String getCursorDisplayName(CxCursor cursor);
 
     CxCursor getCursorReferenced(CxCursor cursor);
 
@@ -106,11 +106,11 @@ public interface CxCursor
 
     CxSourceRange getCommentRange(CxCursor cursor);
 
-    CxString getRawCommentText(CxCursor cursor);
+    String getRawCommentText(CxCursor cursor);
 
-    CxString getBriefCommentText(CxCursor cursor);
+    String getBriefCommentText(CxCursor cursor);
 
-    CxString getMangling(CxCursor cursor);
+    String getMangling(CxCursor cursor);
 
     CxModule getModule(CxCursor cursor);
 

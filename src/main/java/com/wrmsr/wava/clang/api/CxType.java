@@ -17,4 +17,50 @@ package com.wrmsr.wava.clang.api;
 public interface CxType
 {
     String getSpelling();
+
+    CxType getCanonicalType();
+
+    boolean isConstQualifiedType();
+
+    boolean isVolatileQualifiedType();
+
+    boolean isRestrictQualifiedType();
+
+    CxType getPointeeType();
+
+    CxCursor getTypeDeclaration();
+
+    CxCallingConv getFunctionTypeCallingConv();
+
+    CxType getResultType();
+
+    int getNumArgTypes();
+
+    CxType getArgType(int i);
+
+    boolean isFunctionTypeVariadic();
+
+    CxType getElementType();
+
+    long getNumElements();
+
+    CxType getArrayElementType();
+
+    long getArraySize();
+
+    CxType getNamedType();
+
+    long getAlignOf();
+
+    CxType getClassType();
+
+    long getSizeOf();
+
+    long getOffsetOf(String s);
+
+    int getNumTemplateArguments();
+
+    CxType getTemplateArgumentAsType(int i);
+
+    CxRefQualifierKind getCXXRefQualifier();
 }
