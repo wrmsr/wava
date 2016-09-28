@@ -21,9 +21,9 @@ import io.airlift.log.Logger;
 
 import java.util.List;
 
-public final class MainCli
+public final class WavaMainCli
 {
-    private static final Logger log = Logger.get(MainCli.class);
+    private static final Logger log = Logger.get(WavaMainCli.class);
 
     public static void main(String[] args)
             throws Throwable

@@ -35,15 +35,15 @@ public class TestGuiceMain
     public void testGuiceMain()
             throws Exception
     {
-        Bootstrap app = new Bootstrap(new MainModule());
+        Bootstrap app = new Bootstrap(new WavaMainModule());
         Injector injector = app.strictConfig().initialize();
 
         Element root = new Parser(Input.ofResource("new/sqlite3.wast")).parse();
         YModule ymodule = new ModuleFactory(root).create();
         Module module = UnitTranslation.translateModule(Name.of("sqlite3"), ymodule);
 
-        ModuleScope modulecope = injector.getInstance(ModuleScope.class);
-        modulecope.with(
+        ModuleScope moduleScope = injector.getInstance(ModuleScope.class);
+        moduleScope.with(
                 ImmutableMap.of(
                         Key.get(Module.class), module),
                 () -> {

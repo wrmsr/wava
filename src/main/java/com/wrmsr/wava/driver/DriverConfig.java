@@ -11,19 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wrmsr.wava;
+package com.wrmsr.wava.driver;
 
-import com.google.inject.AbstractModule;
-import com.wrmsr.wava.compile.CompileModule;
-import com.wrmsr.wava.driver.DriverModule;
-
-public final class MainModule
-        extends AbstractModule
+public final class DriverConfig
 {
-    @Override
-    protected void configure()
-    {
-        install(new CompileModule());
-        install(new DriverModule());
-    }
 }
