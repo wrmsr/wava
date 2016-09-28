@@ -14,6 +14,10 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang.api;
 
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
+
 public interface CxCursor
 {
     boolean cursorEqual(CxCursor other);
@@ -121,4 +125,14 @@ public interface CxCursor
     CxSourceRange getCursorReferenceNameRange(int nameFlags, int pieceIndex);
 
     CxEvalResult evaluate();
+
+    default List<CxCursor> getChildren()
+    {
+        ImmutableList.Builder<CxCursor> builder = ImmutableList.builder();
+        visitChildren((child, parent) -> {
+            builder.add(child);
+            return CxChildVisitResult.Continue;
+        });
+        return builder.build();
+    }
 }
