@@ -26,8 +26,13 @@ public interface CxString
         if (string == null) {
             return null;
         }
+        return string.get();
+    }
+
+    static String unwrapAndClose(CxString string)
+    {
         try {
-            return string.get();
+            return unwrap(string);
         }
         finally {
             try {

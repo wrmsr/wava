@@ -19,6 +19,7 @@ import com.wrmsr.wava.clang.api.CxCursorKind;
 import com.wrmsr.wava.clang.api.CxCursorVisitor;
 import com.wrmsr.wava.clang.api.CxCxxAccessSpecifier;
 import com.wrmsr.wava.clang.api.CxEvalResult;
+import com.wrmsr.wava.clang.api.CxEvalValue;
 import com.wrmsr.wava.clang.api.CxModule;
 import com.wrmsr.wava.clang.api.CxSourceRange;
 import com.wrmsr.wava.clang.api.CxStorageClass;
@@ -80,7 +81,7 @@ final class JffiCxCursor
     @Override
     public String getSpelling()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_getCursorSpelling(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_getCursorSpelling(this));
     }
 
     @Override
@@ -182,7 +183,7 @@ final class JffiCxCursor
     @Override
     public String getDeclObjCTypeEncoding()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_getDeclObjCTypeEncoding(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_getDeclObjCTypeEncoding(this));
     }
 
     @Override
@@ -248,13 +249,13 @@ final class JffiCxCursor
     @Override
     public String getCursorUSR()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_getCursorUSR(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_getCursorUSR(this));
     }
 
     @Override
     public String getCursorSpelling()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_getCursorSpelling(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_getCursorSpelling(this));
     }
 
     @Override
@@ -266,7 +267,7 @@ final class JffiCxCursor
     @Override
     public String getCursorDisplayName()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_getCursorDisplayName(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_getCursorDisplayName(this));
     }
 
     @Override
@@ -320,19 +321,19 @@ final class JffiCxCursor
     @Override
     public String getRawCommentText()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_Cursor_getRawCommentText(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_Cursor_getRawCommentText(this));
     }
 
     @Override
     public String getBriefCommentText()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_Cursor_getBriefCommentText(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_Cursor_getBriefCommentText(this));
     }
 
     @Override
     public String getMangling()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_Cursor_getMangling(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_Cursor_getMangling(this));
     }
 
     @Override
@@ -360,8 +361,8 @@ final class JffiCxCursor
     }
 
     @Override
-    public CxEvalResult evaluate()
+    public CxEvalValue evaluate()
     {
-        return runtime.getLibClang().clang_Cursor_Evaluate(this);
+        return CxEvalResult.unwrapAndClose(runtime.getLibClang().clang_Cursor_Evaluate(this));
     }
 }

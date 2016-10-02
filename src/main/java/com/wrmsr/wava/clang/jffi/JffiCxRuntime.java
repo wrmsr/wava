@@ -295,7 +295,7 @@ abstract class JffiCxRuntime
     @Override
     public String getClangVersion()
     {
-        return CxString.unwrap(getLibClang().clang_getClangVersion());
+        return CxString.unwrapAndClose(getLibClang().clang_getClangVersion());
     }
 
     abstract void disableCrashHandler();

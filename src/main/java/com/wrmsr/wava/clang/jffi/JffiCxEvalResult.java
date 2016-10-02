@@ -14,6 +14,7 @@
 package com.wrmsr.wava.clang.jffi;
 
 import com.wrmsr.wava.clang.api.CxEvalResult;
+import com.wrmsr.wava.clang.api.CxEvalResultKind;
 
 final class JffiCxEvalResult
         extends JffiPointer
@@ -35,7 +36,32 @@ final class JffiCxEvalResult
             throws Exception
     {
         if (!isDisposed) {
+            runtime.getLibClang().clang_EvalResult_dispose(this);
             isDisposed = true;
         }
+    }
+
+    @Override
+    public CxEvalResultKind getKind()
+    {
+        return runtime.getLibClang().clang_EvalResult_getKind(this);
+    }
+
+    @Override
+    public long getAsInt()
+    {
+        return runtime.getLibClang().clang_EvalResult_getAsInt(this);
+    }
+
+    @Override
+    public double getAsDouble()
+    {
+        return runtime.getLibClang().clang_EvalResult_getAsDouble(this);
+    }
+
+    @Override
+    public String getAsStr()
+    {
+        return runtime.getLibClang().clang_EvalResult_getAsStr(this);
     }
 }

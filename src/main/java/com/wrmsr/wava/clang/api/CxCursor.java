@@ -124,7 +124,7 @@ public interface CxCursor
 
     CxSourceRange getCursorReferenceNameRange(int nameFlags, int pieceIndex);
 
-    CxEvalResult evaluate();
+    CxEvalValue evaluate();
 
     default List<CxCursor> getChildren()
     {

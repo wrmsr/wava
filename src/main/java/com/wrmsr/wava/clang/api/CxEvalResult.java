@@ -14,7 +14,52 @@
 \*===----------------------------------------------------------------------===*/
 package com.wrmsr.wava.clang.api;
 
+import com.google.common.base.Throwables;
+
+import java.util.Optional;
+
 public interface CxEvalResult
         extends AutoCloseable
 {
+    CxEvalResultKind getKind();
+
+    long getAsInt();
+
+    double getAsDouble();
+
+    String getAsStr();
+
+    static CxEvalValue unwrap(CxEvalResult evalResult)
+    {
+        Optional<Object> value = Optional.empty();
+        switch (evalResult.getKind()) {
+            case Int:
+                value = Optional.of(evalResult.getAsInt());
+                break;
+            case Float:
+                value = Optional.of(evalResult.getAsDouble());
+                break;
+            case ObjCStrLiteral:
+            case StrLiteral:
+            case CFStr:
+                value = Optional.of(evalResult.getAsStr());
+                break;
+        }
+        return new CxEvalValue(evalResult.getKind(), value);
+    }
+
+    static CxEvalValue unwrapAndClose(CxEvalResult evalResult)
+    {
+        try {
+            return unwrap(evalResult);
+        }
+        finally {
+            try {
+                evalResult.close();
+            }
+            catch (Exception e) {
+                throw Throwables.propagate(e);
+            }
+        }
+    }
 }

@@ -42,7 +42,7 @@ final class JffiCxType
     @Override
     public String getSpelling()
     {
-        return CxString.unwrap(runtime.getLibClang().clang_getTypeSpelling(this));
+        return CxString.unwrapAndClose(runtime.getLibClang().clang_getTypeSpelling(this));
     }
 
     @Override

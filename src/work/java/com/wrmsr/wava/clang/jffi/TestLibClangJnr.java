@@ -39,6 +39,7 @@ public class TestLibClangJnr
     {
         if (!cursor.cursorIsNull()) {
             System.out.println(String.format("%s%-20s %-20s %s", Strings.repeat(" ", indent), cursor.getKind(), cursor.getSpelling(), cursor.getType().getSpelling()));
+            System.out.println(cursor.evaluate());
             cursor.visitChildren(bind(TestLibClangJnr::printCursor, indent + 2)::apply);
             return CxChildVisitResult.Continue;
         }
