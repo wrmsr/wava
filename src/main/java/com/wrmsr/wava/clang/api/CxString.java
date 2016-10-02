@@ -31,6 +31,9 @@ public interface CxString
 
     static String unwrapAndClose(CxString string)
     {
+        if (string == null) {
+            return null;
+        }
         try {
             return unwrap(string);
         }

@@ -22,6 +22,7 @@ import com.wrmsr.wava.clang.api.CxIndex;
 import com.wrmsr.wava.clang.api.CxRuntime;
 import com.wrmsr.wava.clang.api.CxTranslationUnit;
 import com.wrmsr.wava.clang.api.CxTranslationUnitFlags;
+import com.wrmsr.wava.util.POSIXUtils;
 
 import static com.wrmsr.wava.util.function.Bind.bind;
 
@@ -51,6 +52,9 @@ public class TestLibClangJnr
     public static void main(String[] args)
             throws Throwable
     {
+        System.out.println(POSIXUtils.getPOSIX().getpid());
+        System.in.read();
+
         String libraryPath = "/Users/spinlock/src/llvm/clang/build/lib/libclang.dylib";
         libraryPath = "/Users/spinlock/Library/Caches/CLion2016.2/cmake/generated/clang-4a32f2f0/4a32f2f0/Debug/lib/libclang.dylib";
 

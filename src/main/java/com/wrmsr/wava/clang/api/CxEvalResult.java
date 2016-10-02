@@ -31,6 +31,9 @@ public interface CxEvalResult
 
     static CxEvalValue unwrap(CxEvalResult evalResult)
     {
+        if (evalResult == null) {
+            return null;
+        }
         Optional<Object> value = Optional.empty();
         switch (evalResult.getKind()) {
             case Int:
@@ -50,6 +53,9 @@ public interface CxEvalResult
 
     static CxEvalValue unwrapAndClose(CxEvalResult evalResult)
     {
+        if (evalResult == null) {
+            return null;
+        }
         try {
             return unwrap(evalResult);
         }
