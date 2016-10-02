@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.wrmsr.wava.clang.api.CxChildVisitResult;
 import com.wrmsr.wava.clang.api.CxCursor;
+import com.wrmsr.wava.clang.api.CxCursorKind;
 import com.wrmsr.wava.clang.api.CxIndex;
 import com.wrmsr.wava.clang.api.CxRuntime;
 import com.wrmsr.wava.clang.api.CxTranslationUnit;
@@ -40,7 +41,9 @@ public class TestLibClangJnr
     {
         if (!cursor.cursorIsNull()) {
             System.out.println(String.format("%s%-20s %-20s %s", Strings.repeat(" ", indent), cursor.getKind(), cursor.getSpelling(), cursor.getType().getSpelling()));
-            System.out.println(cursor.evaluate());
+            if (cursor.getKind() == CxCursorKind.VarDecl) {
+                System.out.println(cursor.evaluate());
+            }
             cursor.visitChildren(bind(TestLibClangJnr::printCursor, indent + 2)::apply);
             return CxChildVisitResult.Continue;
         }
