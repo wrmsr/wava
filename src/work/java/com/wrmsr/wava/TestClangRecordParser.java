@@ -75,6 +75,14 @@ va_start(v,l) -> __builtin_va_start(v,l)
 https://github.com/antlr/grammars-v4/blob/master/cpp/CPP14.g4 ?
 https://github.com/javaparser/javaparser/tree/master/javaparser-core/src/main/java/com/github/javaparser/ast
 https://github.com/uklimaschewski/EvalEx
+
+******
+*
+*  COMPILE TO WASM, ANALYZE THE WAST
+*  dump_int8,uint8,...
+*  -O0 -fno-inline
+*
+******
 */
 
 import com.wrmsr.wava.util.process.FinalizedProcess;

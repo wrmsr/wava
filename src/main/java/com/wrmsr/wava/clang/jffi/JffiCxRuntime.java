@@ -279,7 +279,7 @@ abstract class JffiCxRuntime
 
         CxEvalResultKind clang_EvalResult_getKind(JffiCxEvalResult evalResult);
 
-        int clang_EvalResult_getAsInt(JffiCxEvalResult evalResult);
+        long clang_EvalResult_getAsInt(JffiCxEvalResult evalResult);
 
         double clang_EvalResult_getAsDouble(JffiCxEvalResult evalResult);
 

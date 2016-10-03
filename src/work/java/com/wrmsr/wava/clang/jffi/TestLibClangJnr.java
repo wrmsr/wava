@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import com.wrmsr.wava.clang.api.CxChildVisitResult;
 import com.wrmsr.wava.clang.api.CxCursor;
 import com.wrmsr.wava.clang.api.CxCursorKind;
+import com.wrmsr.wava.clang.api.CxEvalValue;
 import com.wrmsr.wava.clang.api.CxIndex;
 import com.wrmsr.wava.clang.api.CxRuntime;
 import com.wrmsr.wava.clang.api.CxTranslationUnit;
@@ -35,14 +36,20 @@ import static com.wrmsr.wava.util.function.Bind.bind;
 
 // static void DoPrintMacros(Preprocessor &PP, raw_ostream *OS) {
 
+// http://clang-developers.42468.n3.nabble.com/Extracting-macro-information-using-libclang-the-C-Interface-to-Clang-td4042648.html ugh
+// https://fossies.org/linux/rspamd/clang-plugin/printf_check.cc hi
+
 public class TestLibClangJnr
 {
     public static CxChildVisitResult printCursor(int indent, CxCursor cursor, CxCursor parent)
     {
         if (!cursor.cursorIsNull()) {
             System.out.println(String.format("%s%-20s %-20s %s", Strings.repeat(" ", indent), cursor.getKind(), cursor.getSpelling(), cursor.getType().getSpelling()));
-            if (cursor.getKind() == CxCursorKind.VarDecl) {
-                System.out.println(cursor.evaluate());
+            if (cursor.getKind() == CxCursorKind.VarDecl || cursor.getKind() == CxCursorKind.IntegerLiteral || cursor.getKind() == CxCursorKind.StringLiteral) {
+                CxEvalValue value = cursor.evaluate();
+                if (value != null) {
+                    System.out.println("***" + value);
+                }
             }
             cursor.visitChildren(bind(TestLibClangJnr::printCursor, indent + 2)::apply);
             return CxChildVisitResult.Continue;
@@ -56,7 +63,7 @@ public class TestLibClangJnr
             throws Throwable
     {
         System.out.println(POSIXUtils.getPOSIX().getpid());
-        System.in.read();
+        // System.in.read();
 
         String libraryPath = "/Users/spinlock/src/llvm/clang/build/lib/libclang.dylib";
         libraryPath = "/Users/spinlock/Library/Caches/CLion2016.2/cmake/generated/clang-4a32f2f0/4a32f2f0/Debug/lib/libclang.dylib";
@@ -65,8 +72,12 @@ public class TestLibClangJnr
 
         try (CxIndex idx = cxRuntime.createIndex(0, 0)) {
             try (CxTranslationUnit tu = idx.parseTranslationUnit(
-                    "/Users/spinlock/src/wrmsr/wava/tmp/a.c",
-                    ImmutableList.of("-I/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include", "--target=wasm32"),
+                    "/Users/spinlock/src/wrmsr/wava/tmp/a.cpp",
+                    ImmutableList.of(
+                            "-std=c++14",
+                            "-I/Users/spinlock/src/wrmsr/wava/tmp/wasm-install/sysroot/include",
+                            "--target=wasm32"
+                    ),
                     ImmutableSet.of(CxTranslationUnitFlags.DetailedPreprocessingRecord))) {
                 CxCursor cursor = tu.getCursor();
 
