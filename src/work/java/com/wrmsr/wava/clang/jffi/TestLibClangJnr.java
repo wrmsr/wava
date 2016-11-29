@@ -66,7 +66,7 @@ public class TestLibClangJnr
         // System.in.read();
 
         String libraryPath = "/Users/spinlock/src/llvm/clang/build/lib/libclang.dylib";
-        libraryPath = "/Users/spinlock/Library/Caches/CLion2016.2/cmake/generated/clang-4a32f2f0/4a32f2f0/Debug/lib/libclang.dylib";
+        libraryPath = "/Users/spinlock/src/llvm/clang/cmake-build-debug/lib/libclang.dylib";
 
         CxRuntime cxRuntime = JffiClangApi.create(libraryPath);
 
