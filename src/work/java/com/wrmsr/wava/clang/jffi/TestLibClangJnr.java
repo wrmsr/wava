@@ -63,7 +63,7 @@ public class TestLibClangJnr
             throws Throwable
     {
         System.out.println(POSIXUtils.getPOSIX().getpid());
-        // System.in.read();
+        System.in.read();
 
         String libraryPath = "/Users/spinlock/src/llvm/clang/build/lib/libclang.dylib";
         libraryPath = "/Users/spinlock/src/llvm/clang/cmake-build-debug/lib/libclang.dylib";
